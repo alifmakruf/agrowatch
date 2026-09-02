@@ -713,7 +713,7 @@ export default function FormPetani() {
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="px-6 py-2.5 bg-[#1a472a] hover:bg-[#12331e] text-white font-medium rounded-md transition-colors flex-1 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                        className="shine-hover px-6 py-2.5 bg-[#1a472a] hover:bg-[#12331e] text-white font-medium rounded-md transition-colors flex-1 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
                     >
                         {submitting ? (
                             <>

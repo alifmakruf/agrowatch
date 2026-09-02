@@ -99,7 +99,7 @@ export default function Login() {
         <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row font-sans">
 
             {/* KIRI - Panel Hijau (Branding) */}
-            <div className="w-full lg:w-1/2 lg:h-full bg-[#4a7c2b] flex flex-col justify-between gap-8 lg:gap-0 p-6 sm:p-10 lg:p-12 text-white relative overflow-hidden">
+            <div className="shine-hover w-full lg:w-1/2 lg:h-full bg-[#4a7c2b] flex flex-col justify-between gap-8 lg:gap-0 p-6 sm:p-10 lg:p-12 text-white relative overflow-hidden">
                 <div className="relative z-10">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AgroWatch</h1>
                     <p className="text-sm font-light mt-1 text-green-100">Precision Ecology System</p>
@@ -136,7 +136,7 @@ export default function Login() {
                         {/* Opsi 1: Petani / Petugas Lapangan */}
                         <div
                             onClick={() => { setSelectedRole('petani'); setErrorMessage(''); }}
-                            className={`cursor-pointer border rounded-lg p-4 transition-all flex items-start gap-4 
+                            className={`lift-hover cursor-pointer border rounded-lg p-4 transition-all flex items-start gap-4 
                             ${selectedRole === 'petani' ? 'border-[#1a472a] bg-white dark:bg-gray-900 ring-1 ring-[#1a472a]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300'}`}
                         >
                             <div className="mt-1">
@@ -159,7 +159,7 @@ export default function Login() {
                         {/* Opsi 2: Manajemen */}
                         <div
                             onClick={() => { setSelectedRole('manajemen'); setErrorMessage(''); }}
-                            className={`cursor-pointer border rounded-lg p-4 transition-all flex items-start gap-4 
+                            className={`lift-hover cursor-pointer border rounded-lg p-4 transition-all flex items-start gap-4 
                             ${selectedRole === 'manajemen' ? 'border-[#1a472a] bg-white dark:bg-gray-900 ring-1 ring-[#1a472a]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300'}`}
                         >
                             <div className="mt-1">
@@ -220,7 +220,7 @@ export default function Login() {
                         <button
                             onClick={handleLogin}
                             disabled={loading}
-                            className="w-full bg-[#1a472a] hover:bg-[#12331e] text-white font-medium rounded-md py-3 px-4 flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-60 cursor-pointer"
+                            className="lift-hover shine-hover w-full bg-[#1a472a] hover:bg-[#12331e] text-white font-medium rounded-md py-3 px-4 flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-60 cursor-pointer"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -241,7 +241,7 @@ export default function Login() {
                         <button
                             onClick={handleGuestLogin}
                             disabled={loading}
-                            className="w-full bg-white dark:bg-gray-900 border border-gray-300 hover:bg-gray-50 text-gray-700 dark:text-gray-300 font-medium rounded-md py-3 px-4 flex items-center justify-center gap-2 transition-colors disabled:opacity-60 cursor-pointer"
+                            className="lift-hover w-full bg-white dark:bg-gray-900 border border-gray-300 hover:bg-gray-50 text-gray-700 dark:text-gray-300 font-medium rounded-md py-3 px-4 flex items-center justify-center gap-2 transition-colors disabled:opacity-60 cursor-pointer"
                         >
                             <User size={18} />
                             Akses Tamu (Hanya Lapangan)

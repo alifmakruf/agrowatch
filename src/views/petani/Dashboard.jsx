@@ -61,7 +61,7 @@ export default function DashboardPetani() {
                         {/* Card 1: Tambah Laporan */}
                         <button
                             onClick={() => navigate('/petani/form')}
-                            className="w-full bg-[#2E5E32] hover:bg-[#244a27] transition-all duration-300 rounded-3xl p-8 md:p-10 flex flex-col items-center md:items-start text-center md:text-left shadow-lg hover:shadow-xl group active:scale-[0.98]"
+                            className="lift-hover shine-hover w-full bg-[#2E5E32] hover:bg-[#244a27] transition-all duration-300 rounded-3xl p-8 md:p-10 flex flex-col items-center md:items-start text-center md:text-left shadow-lg hover:shadow-xl group active:scale-[0.98]"
                         >
                             <div className="bg-[#A3D295] p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform">
                                 <Plus size={36} className="text-[#2E5E32]" strokeWidth={2.5} />
@@ -77,7 +77,7 @@ export default function DashboardPetani() {
                         {/* Card 2: Riwayat Laporan */}
                         <button
                             onClick={() => navigate('/petani/history')} // Akan kita buat halamannya nanti
-                            className="w-full bg-white dark:bg-gray-900 hover:bg-gray-50 border-2 border-gray-200 dark:border-gray-800 transition-all duration-300 rounded-3xl p-8 md:p-10 flex flex-col items-center md:items-start text-center md:text-left shadow-sm hover:shadow-md group active:scale-[0.98]"
+                            className="lift-hover w-full bg-white dark:bg-gray-900 hover:bg-gray-50 border-2 border-gray-200 dark:border-gray-800 transition-all duration-300 rounded-3xl p-8 md:p-10 flex flex-col items-center md:items-start text-center md:text-left shadow-sm hover:shadow-md group active:scale-[0.98]"
                         >
                             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl mb-6 group-hover:scale-110 transition-transform">
                                 <History size={36} className="text-[#2E5E32]" strokeWidth={2.5} />

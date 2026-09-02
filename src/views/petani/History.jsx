@@ -167,7 +167,7 @@ export default function HistoryPetani() {
                             {listRiwayat.map((item) => (
                                 <div
                                     key={item.id}
-                                    className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 ${getAccentColor(item.status)}`}
+                                    className={`lift-hover bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 ${getAccentColor(item.status)}`}
                                 >
                                     <div className="space-y-2 flex-1">
                                         <div className="flex items-center gap-3 text-xs">

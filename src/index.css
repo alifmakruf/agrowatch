@@ -11,3 +11,101 @@
  * tampilan terasa "ngebug" (state berubah, visual tidak).
  */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * ============================================================
+ * Micro-interaction ringan (murni CSS, tanpa JS/library tambahan)
+ * Hanya menganimasikan `transform` & `opacity` (murah untuk GPU,
+ * tidak memicu reflow) sehingga tidak memberatkan halaman.
+ * Pakai sebagai class tambahan (tidak mengganti class/warna yang
+ * sudah ada) di card/tombol yang ingin diberi efek:
+ *
+ *   .shine-hover   -> kilau melintas 1x saat hover
+ *   .lift-hover    -> sedikit terangkat + bayangan lembut saat hover
+ *   .press-active  -> sedikit mengecil saat ditekan (feedback klik)
+ * ============================================================
+ */
+
+.shine-hover {
+    position: relative;
+    overflow: hidden;
+}
+
+.shine-hover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.45) 50%, transparent 65%);
+    transform: translateX(-120%);
+    pointer-events: none;
+    will-change: transform;
+}
+
+.shine-hover:hover::after {
+    transform: translateX(120%);
+    transition: transform 0.7s ease;
+}
+
+.lift-hover {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.lift-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.25);
+}
+
+.press-active {
+    transition: transform 0.1s ease;
+}
+
+.press-active:active {
+    transform: scale(0.97);
+}
+
+/*
+ * Untuk tombol/ikon yang TIDAK punya border/background sendiri
+ * (mis. tombol hamburger, ikon notifikasi, tombol "x" hapus).
+ * Saat hover, muncul background lembut selayaknya tombol biasa.
+ *
+ *   .ghost-hover      -> background + rounded saat hover (dipakai di
+ *                        elemen yang SUDAH punya padding sendiri, mis.
+ *                        tombol dengan class p-1.5, p-2, dst)
+ *   .ghost-hover-pad  -> tambahkan bersama .ghost-hover HANYA jika
+ *                        elemennya belum punya padding sama sekali
+ *                        (mis. <span> ikon polos). Pakai margin negatif
+ *                        supaya area hover membesar tanpa menggeser
+ *                        posisi/layout elemen di sekitarnya.
+ */
+.ghost-hover {
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ghost-hover:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.dark .ghost-hover:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.ghost-hover-pad {
+    padding: 0.375rem;
+    margin: -0.375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .shine-hover::after,
+    .lift-hover,
+    .press-active {
+        transition: none !important;
+        animation: none !important;
+    }
+
+    .lift-hover:hover,
+    .press-active:active {
+        transform: none !important;
+    }
+}

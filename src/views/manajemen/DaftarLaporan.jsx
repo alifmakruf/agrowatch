@@ -388,8 +388,8 @@ export default function DaftarLaporan() {
                                 key={tab}
                                 onClick={() => handleTabClick(tab)}
                                 className={`relative px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${activeTab === tab
-                                        ? 'bg-[#14361e] text-white font-bold shadow-xs'
-                                        : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50'
+                                    ? 'bg-[#14361e] text-white font-bold shadow-xs'
+                                    : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50'
                                     }`}
                             >
                                 {tab}
@@ -419,8 +419,8 @@ export default function DaftarLaporan() {
                                     key={cat.name}
                                     onClick={() => { setSelectedCategory(isSelected ? null : cat.name); setPage(1); }}
                                     className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${isSelected
-                                            ? 'bg-green-100 text-green-900 border border-green-300 font-bold'
-                                            : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50'
+                                        ? 'bg-green-100 text-green-900 border border-green-300 font-bold'
+                                        : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50'
                                         }`}
                                 >
                                     <IconComponent size={13} />
@@ -459,7 +459,7 @@ export default function DaftarLaporan() {
                                     </tr>
                                 ) : (
                                     pageItems.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                        <tr key={idx} className="lift-hover hover:bg-gray-50/50 transition-colors">
                                             <td className="py-4 px-6 font-bold text-gray-900 dark:text-gray-100">{item.id}</td>
                                             <td className="py-4 px-6 text-gray-500 dark:text-gray-400 whitespace-nowrap">{item.tanggal}</td>
                                             <td className="py-4 px-6">

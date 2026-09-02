@@ -186,7 +186,7 @@ export default function DetailLaporan() {
                                         alert('Laporan berhasil ditandai selesai.');
                                         navigate('/manajemen/laporan');
                                     }}
-                                    className="w-full bg-[#14361e] hover:bg-[#1e4d2b] text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                                    className="lift-hover shine-hover w-full bg-[#14361e] hover:bg-[#1e4d2b] text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
                                 >
                                     <CheckCircle size={16} />
                                     <span>Tandai Selesai</span>
@@ -194,7 +194,7 @@ export default function DetailLaporan() {
 
                                 <button
                                     onClick={() => navigate(`/manajemen/tindak-lanjut/${currentReport.rawId || id}`)}
-                                    className="w-full bg-white dark:bg-gray-900 border border-gray-300 hover:bg-gray-50 text-gray-700 dark:text-gray-300 font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                                    className="lift-hover w-full bg-white dark:bg-gray-900 border border-gray-300 hover:bg-gray-50 text-gray-700 dark:text-gray-300 font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
                                 >
                                     <UserPlus size={16} />
                                     <span>{hasTindakLanjut ? 'Edit Penugasan' : 'Tugaskan Tim'}</span>

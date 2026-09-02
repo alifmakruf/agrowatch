@@ -67,7 +67,7 @@ export default function TindakLanjutManajemen() {
 
                 {/* 2 KARTU METRIK UTAMA */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex items-center justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Laporan Kritis</p>
                             <h3 className="text-3xl font-extrabold text-red-600 mt-1">{totalKritis}</h3>
@@ -77,7 +77,7 @@ export default function TindakLanjutManajemen() {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex items-center justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tindak Lanjut Hari Ini</p>
                             <h3 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mt-1">{tindakLanjutHariIni}</h3>
@@ -111,7 +111,7 @@ export default function TindakLanjutManajemen() {
                                 {pageItems.map((item, idx) => {
                                     const IconComponent = item.icon;
                                     return (
-                                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => handleRowClick(item)}>
+                                        <tr key={idx} className="lift-hover hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => handleRowClick(item)}>
                                             <td className="py-4 px-6 font-bold text-gray-900 dark:text-gray-100">{item.id}</td>
                                             <td className="py-4 px-6">
                                                 <div className="flex items-center gap-2">

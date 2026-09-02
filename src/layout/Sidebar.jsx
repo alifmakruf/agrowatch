@@ -71,7 +71,7 @@ export default function Sidebar({ children }) {
             >
                 <div>
                     {/* Logo Brand */}
-                    <div className="p-6 border-b border-white/10 flex items-center justify-between gap-3">
+                    <div className="shine-hover p-6 border-b border-white/10 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="bg-[#1e4d2b] p-2 rounded-lg shrink-0">
                                 <Tractor size={22} className="text-white" />
@@ -100,7 +100,7 @@ export default function Sidebar({ children }) {
                                 <button
                                     key={item.path}
                                     onClick={() => handleNavigate(item.path)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
+                                    className={`lift-hover w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
                                         ? 'bg-[#c5e3c4] text-[#14361e] font-bold shadow-md'
                                         : 'text-gray-300 hover:bg-white/5 hover:text-white'
                                         }`}
@@ -115,7 +115,7 @@ export default function Sidebar({ children }) {
                         <div className="pt-4">
                             <div
                                 onClick={() => handleNavigate('/manajemen/pengaturan')}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/5 cursor-pointer"
+                                className="lift-hover w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/5 cursor-pointer"
                             >
                                 <Settings size={18} />
                                 <span>Pengaturan Aplikasi</span>
@@ -133,14 +133,14 @@ export default function Sidebar({ children }) {
                 <div className="p-4 border-t border-white/10 space-y-1 bg-black/10">
                     <button
                         onClick={() => handleNavigate('/manajemen/pengaturan')}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
+                        className="lift-hover w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
                     >
                         <User size={16} />
                         <span>Profile Settings</span>
                     </button>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="lift-hover w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                         <LogOut size={16} />
                         <span>Sign Out</span>

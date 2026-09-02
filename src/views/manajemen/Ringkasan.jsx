@@ -184,7 +184,7 @@ export default function RingkasanManajemen() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
                     {/* Card 1: Total Laporan */}
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
                         <div className="flex items-center justify-between text-gray-400 dark:text-gray-500 mb-2">
                             <span className="p-2 bg-green-50 text-green-700 rounded-lg"><BarChart3 size={16} /></span>
                             <span className="text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Total</span>
@@ -196,7 +196,7 @@ export default function RingkasanManajemen() {
                     </div>
 
                     {/* Card 2: Hari Ini */}
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
                         <span className="p-2 bg-green-50 text-green-700 rounded-lg w-fit mb-2"><CalendarDays size={16} /></span>
                         <div>
                             <h3 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">{todayCount}</h3>
@@ -205,7 +205,7 @@ export default function RingkasanManajemen() {
                     </div>
 
                     {/* Card 3: Terbuka */}
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
                         <span className="p-2 bg-red-50 text-red-600 rounded-lg w-fit mb-2"><AlertTriangle size={16} /></span>
                         <div>
                             <h3 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">{openCount}</h3>
@@ -214,7 +214,7 @@ export default function RingkasanManajemen() {
                     </div>
 
                     {/* Card 4: Sedang Diproses */}
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
                         <span className="p-2 bg-amber-50 text-amber-600 rounded-lg w-fit mb-2"><Loader2 size={16} /></span>
                         <div>
                             <h3 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">{inProgressCount}</h3>
@@ -223,7 +223,7 @@ export default function RingkasanManajemen() {
                     </div>
 
                     {/* Card 5: Ditutup */}
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
+                    <div className="lift-hover bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col justify-between">
                         <span className="p-2 bg-gray-100 dark:bg-gray-800 text-gray-600 rounded-lg w-fit mb-2"><CheckCircle2 size={16} /></span>
                         <div>
                             <h3 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">{closedCount}</h3>
@@ -237,7 +237,7 @@ export default function RingkasanManajemen() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* Kolom Kiri: Laporan Terbaru (2 Kolom span) */}
-                    <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6 flex flex-col">
+                    <div className="lift-hover lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6 flex flex-col">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="font-bold text-gray-900 dark:text-gray-100 text-base">Laporan Terbaru</h2>
                             <button onClick={() => navigate('/manajemen/laporan')} className="text-xs font-semibold text-green-700 hover:underline cursor-pointer">Lihat Semua</button>
@@ -284,7 +284,7 @@ export default function RingkasanManajemen() {
                         {/* Personel Lapangan Aktif -- jumlah user unik yang sudah pernah
                             membuat laporan (dihitung dari data laporan asli, bukan
                             avatar dummy statis seperti sebelumnya). */}
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-5">
+                        <div className="lift-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-5">
                             <h2 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-1">Personel Lapangan Aktif</h2>
                             <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-4">Jumlah pelapor unik dari seluruh laporan tercatat</p>
                             <div className="flex items-end justify-between">
@@ -354,7 +354,7 @@ export default function RingkasanManajemen() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* Dokumentasi Terkini (2 Kolom span) */}
-                    <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6">
+                    <div className="lift-hover lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="font-bold text-gray-900 dark:text-gray-100 text-base">Dokumentasi Terkini</h2>
                             <button onClick={() => navigate('/manajemen/laporan')} className="text-xs font-semibold text-green-700 hover:underline cursor-pointer">Lihat Semua</button>
@@ -364,30 +364,30 @@ export default function RingkasanManajemen() {
                             {reports.slice(0, 3).map((r, i) => {
                                 const photoUrl = r.image || "https://images.unsplash.com/photo-1595974482597-4e8296a255e4?w=400";
                                 return (
-                                <div
-                                    key={i}
-                                    className="relative rounded-xl overflow-hidden group shadow-xs h-32 bg-gray-900 cursor-zoom-in"
-                                    onClick={() => setLightboxSrc(photoUrl)}
-                                >
-                                    <img
-                                        src={photoUrl}
-                                        alt={r.jenisLabel}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end text-white">
-                                        <p className="text-[10px] font-medium text-gray-300">
-                                            {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}
-                                        </p>
-                                        <p className="text-xs font-bold truncate">{r.sektor} - {r.jenisLabel}</p>
+                                    <div
+                                        key={i}
+                                        className="relative rounded-xl overflow-hidden group shadow-xs h-32 bg-gray-900 cursor-zoom-in"
+                                        onClick={() => setLightboxSrc(photoUrl)}
+                                    >
+                                        <img
+                                            src={photoUrl}
+                                            alt={r.jenisLabel}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end text-white">
+                                            <p className="text-[10px] font-medium text-gray-300">
+                                                {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}
+                                            </p>
+                                            <p className="text-xs font-bold truncate">{r.sektor} - {r.jenisLabel}</p>
+                                        </div>
                                     </div>
-                                </div>
                                 );
                             })}
                         </div>
                     </div>
 
                     {/* Jenis Insiden (Bar Persentase) */}
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6">
+                    <div className="lift-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6">
                         <h2 className="font-bold text-gray-900 dark:text-gray-100 text-base mb-6">Jenis Insiden</h2>
 
                         <div className="space-y-5">
