@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 tidak lagi membaca `darkMode: 'class'` dari tailwind.config.js
+ * secara otomatis (config JS lama diabaikan kecuali di-import lewat @config).
+ * Baris @custom-variant di bawah ini yang membuat SEMUA class `dark:*` di
+ * seluruh komponen bereaksi terhadap class "dark" yang ditambahkan/dihapus
+ * di elemen <html> oleh AppDataContext.jsx. Tanpa baris ini, toggle di
+ * Pengaturan hanya mengubah state & localStorage tapi tidak ada satupun
+ * style dark mode yang benar-benar ter-generate/aktif -- itulah sebabnya
+ * tampilan terasa "ngebug" (state berubah, visual tidak).
+ */
+@custom-variant dark (&:where(.dark, .dark *));

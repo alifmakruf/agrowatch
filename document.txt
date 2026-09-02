@@ -1,0 +1,9 @@
+1. pada detail laporan, ketika sebelumnya sudah di isi form tindak lanjut maka ketika dilihat lagi detail nya harusnya ada tanda kalau itu diproses sama tim dan tindakannya apa dll,
+2. pada page detail tindak lanjut juga gitu, kalau sebelumnya udah diisi maka akan tetap terisi, dan bisa di edit, bukan kosong dan kereset
+3. tambahkan juga pada page detail tindak lanjut sebuah tombol yang menuju ke whatsapp dengan nomor ketua tim, jadi ketika beres membuat penindak lanjutan maka langsung kekirim ke petugasnya
+4. pada settings tambahkan fitur crud tim petugas dengan form nama dan juga nomor wa yang bisa diawali angka 0 maupun 62 maupun +62
+5. pada form pengisian laporan pada kolom jenis kejadian ada opsi bisa ngetik sendiri kejadiannya,
+6. saya ingin semua page atau card yang menampung foto ketika fotonya diklik maka foto nya akan keluar dengan ukuran aslinya atau tidak terpotong seperti pada card, jadi bisa dilihat foto full nya
+7. pada setiap filter yang berhubungan dengan status terbuka atau open tandai dengan dot merah sebagai indikator kalo ada yang belum di proses
+8. pada page profile settings itu saya ingin berisi (email, foto, nama,), juga bisa crud user manajemen lainnya disitu, 
+9. adakah solusi untuk mengurangi troller atau spammer laporan??
