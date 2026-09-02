@@ -96,27 +96,27 @@ export default function Login() {
     };
 
     return (
-        <div className="h-screen overflow-hidden flex flex-col lg:flex-row font-sans">
+        <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row font-sans">
 
             {/* KIRI - Panel Hijau (Branding) */}
-            <div className="lg:w-1/2 h-full bg-[#4a7c2b] flex flex-col justify-between p-12 text-white relative overflow-hidden">
+            <div className="w-full lg:w-1/2 lg:h-full bg-[#4a7c2b] flex flex-col justify-between gap-8 lg:gap-0 p-6 sm:p-10 lg:p-12 text-white relative overflow-hidden">
                 <div className="relative z-10">
-                    <h1 className="text-3xl font-bold tracking-tight">AgroWatch</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AgroWatch</h1>
                     <p className="text-sm font-light mt-1 text-green-100">Precision Ecology System</p>
                 </div>
 
-                <div className="relative z-10 mt-24 lg:mt-0">
-                    <h2 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
+                <div className="relative z-10 lg:mt-0">
+                    <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold leading-tight mb-4">
                         Laporkan Masalah di Sektor Agroforestri
                     </h2>
-                    <p className="text-green-100 text-base leading-relaxed max-w-md">
+                    <p className="text-green-100 text-sm sm:text-base leading-relaxed max-w-md">
                         Sederhanakan pelaporan lapangan dan manajemen sumber daya dengan pengambilan data presisi yang dirancang untuk medan ekologi yang kompleks.
                     </p>
                 </div>
             </div>
 
             {/* KANAN - Panel Form Login */}
-            <div className="lg:w-1/2 h-full bg-gray-50 dark:bg-gray-800 flex flex-col justify-center p-8 lg:p-24 relative overflow-y-auto">
+            <div className="w-full lg:w-1/2 lg:h-full bg-gray-50 dark:bg-gray-800 flex flex-col justify-center p-6 sm:p-10 lg:p-24 relative overflow-y-auto">
                 <div className="max-w-md w-full mx-auto my-auto py-8">
 
                     <div className="mb-8">
@@ -140,14 +140,14 @@ export default function Login() {
                             ${selectedRole === 'petani' ? 'border-[#1a472a] bg-white dark:bg-gray-900 ring-1 ring-[#1a472a]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300'}`}
                         >
                             <div className="mt-1">
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center 
+                                <div className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center 
                                 ${selectedRole === 'petani' ? 'border-[#1a472a]' : 'border-gray-300'}`}>
                                     {selectedRole === 'petani' && <div className="w-3 h-3 rounded-full bg-[#1a472a]" />}
                                 </div>
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <Sprout size={18} className="text-[#1a472a]" />
+                                    <Sprout size={18} className="text-[#1a472a] shrink-0" />
                                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">Petani / Petugas Lapangan</h3>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -163,14 +163,14 @@ export default function Login() {
                             ${selectedRole === 'manajemen' ? 'border-[#1a472a] bg-white dark:bg-gray-900 ring-1 ring-[#1a472a]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300'}`}
                         >
                             <div className="mt-1">
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center 
+                                <div className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center 
                                 ${selectedRole === 'manajemen' ? 'border-[#1a472a]' : 'border-gray-300'}`}>
                                     {selectedRole === 'manajemen' && <div className="w-3 h-3 rounded-full bg-[#1a472a]" />}
                                 </div>
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <LineChart size={18} className="text-[#1a472a]" />
+                                    <LineChart size={18} className="text-[#1a472a] shrink-0" />
                                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">Manajemen</h3>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -251,13 +251,13 @@ export default function Login() {
                 </div>
 
                 {/* Footer */}
-                <div className="absolute bottom-6 left-8 right-8 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
+                {/* <div className="absolute bottom-6 left-8 right-8 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500">
                     <span>Didukung oleh EcoSys Enterprise</span>
                     <button className="flex items-center gap-1 hover:text-gray-600 dark:text-gray-400 transition-colors">
                         <Settings size={14} />
                         Pengaturan Aplikasi
                     </button>
-                </div>
+                </div> */}
             </div>
 
         </div>

@@ -357,16 +357,21 @@ export default function FormPetani() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Jenis Kejadian</label>
-                                <select
-                                    value={jenis}
-                                    onChange={(e) => setJenis(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-[#1a472a] outline-none bg-white dark:bg-gray-900"
-                                >
-                                    <option value="">Pilih jenis kejadian</option>
-                                    {categories.map((kat, idx) => (
-                                        <option key={idx} value={kat}>{kat}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        list="jenis-kejadian-list"
+                                        value={jenis}
+                                        onChange={(e) => setJenis(e.target.value)}
+                                        placeholder="Ketik atau pilih dari list..."
+                                        className="w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-[#1a472a] outline-none bg-white dark:bg-gray-900"
+                                    />
+                                    <datalist id="jenis-kejadian-list">
+                                        {categories.map((kat, idx) => (
+                                            <option key={idx} value={kat} />
+                                        ))}
+                                    </datalist>
+                                </div>
                                 {fieldError('jenis')}
                             </div>
                             <div>
