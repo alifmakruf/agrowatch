@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../layout/Sidebar';
 import { ArrowLeft, Save, MapPin, ExternalLink, ClipboardList, FilePenLine, RefreshCw, Map } from 'lucide-react';
@@ -58,10 +58,55 @@ export default function DetailTindakLanjut() {
     const [selectedConstraint, setSelectedConstraint] = useState(null);
     const [instructions, setInstructions] = useState('');
     const [status, setStatus] = useState(currentReport.status || 'Terbuka');
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Memoized parse function untuk extract data dari catatan tindak lanjut
+    const parsedFollowUp = useMemo(() => {
+        const notes = currentReport.catatan_tindak_lanjut;
+        if (!notes || notes === 'Menunggu penanganan dari tim manajemen.') {
+            return { team: '', constraint: null, instructions: '', hasData: false };
+        }
+
+        // Format: "Tim: {nama} (Kendala: {kendala}). {instruksi}"
+        // atau: "Tim: {nama}. {instruksi}" jika tidak ada kendala
+        const teamMatch = notes.match(/Tim:\s*([^(\n]+?)(?:\s*\(|\.)/);
+        const constraintMatch = notes.match(/Kendala:\s*([^)]+)\)/);
+        
+        const team = teamMatch ? teamMatch[1].trim() : '';
+        const constraint = constraintMatch ? constraintMatch[1].trim() : null;
+        
+        // Instruksi = sisa text setelah Tim dan Kendala
+        let instructions = notes;
+        if (teamMatch) {
+            instructions = instructions.substring(teamMatch.index + teamMatch[0].length);
+        }
+        if (constraintMatch) {
+            instructions = instructions.substring(instructions.indexOf(')') + 1);
+        }
+        instructions = instructions.replace(/^[\.\s]+/, '').trim();
+
+        return { team, constraint, instructions, hasData: true };
+    }, [currentReport.catatan_tindak_lanjut]);
 
     useEffect(() => {
         if (currentReport.status) setStatus(currentReport.status);
     }, [currentReport.status]);
+
+    // Load data tindak lanjut sebelumnya saat halaman dibuka
+    useEffect(() => {
+        if (parsedFollowUp.hasData) {
+            setSelectedTeam(parsedFollowUp.team);
+            setSelectedConstraint(parsedFollowUp.constraint);
+            setInstructions(parsedFollowUp.instructions);
+            setIsEditing(true);
+        } else {
+            // Reset form jika tidak ada data sebelumnya
+            setSelectedTeam('');
+            setSelectedConstraint(null);
+            setInstructions('');
+            setIsEditing(false);
+        }
+    }, [parsedFollowUp]);
 
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
@@ -165,10 +210,17 @@ export default function DetailTindakLanjut() {
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs space-y-5">
-                            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                <FilePenLine size={13} /> Form Penugasan
-                            </h2>
+                        <div className={`rounded-2xl border shadow-xs p-6 space-y-5 ${isEditing ? 'bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                    <FilePenLine size={13} /> Form Penugasan
+                                </h2>
+                                {isEditing && (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                                        Mode Edit
+                                    </span>
+                                )}
+                            </div>
 
                             <form onSubmit={handleSave} className="space-y-4">
                                 <div>
@@ -220,7 +272,7 @@ export default function DetailTindakLanjut() {
                                     className="w-full bg-[#14361e] hover:bg-[#1e4d2b] text-white font-semibold text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
                                 >
                                     <Save size={16} />
-                                    <span>Simpan Penugasan</span>
+                                    <span>{isEditing ? 'Perbarui Penugasan' : 'Simpan Penugasan'}</span>
                                 </button>
                             </form>
                         </div>
