@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const rootUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const rootUrl = import.meta.env.VITE_API_URL || 'backend-perkebunan-tebu-production.up.railway.app';
 
 export const apiClient = axios.create({
     baseURL: `${rootUrl}/api`,
