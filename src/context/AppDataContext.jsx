@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { loginApi, guestApi, getUserApi, logoutApi } from '../api/auth';
 import { setAuthToken } from '../api/client';
+import { getRiwayatApi, createRiwayatApi } from '../api/riwayat';
 import {
     getLaporanApi,
     getLaporanSummaryApi,
@@ -299,32 +300,67 @@ export function AppDataProvider({ children }) {
     const [summary, setSummary] = useState(null);
     const [sektorList, setSektorList] = useState([]);
     const [kategoriKejadian, setKategoriKejadian] = useState([]);
-    // Riwayat aktivitas dipersist ke localStorage supaya tidak hilang
-    // saat refresh/logout -- SEBELUMNYA activityLogs cuma disimpan di
-    // state React di memori, jadi hilang total tiap kali halaman
-    // dimuat ulang. Ini solusi sementara sampai backend menyediakan
-    // tabel riwayat_aktivitas + endpoint /api/riwayat; begitu itu ada,
-    // ganti sumbernya jadi fetch dari API (lihat fetchActivityLogs di
-    // bawah, yang sudah disiapkan untuk kasus itu).
-    const RIWAYAT_STORAGE_KEY = 'agrowatch_riwayat_aktivitas';
-    const [activityLogs, setActivityLogs] = useState(() => {
-        try {
-            const saved = localStorage.getItem(RIWAYAT_STORAGE_KEY);
-            return saved ? JSON.parse(saved) : [];
-        } catch (err) {
-            console.warn('Gagal membaca riwayat aktivitas dari localStorage:', err);
-            return [];
-        }
-    });
+    // Riwayat aktivitas -- SEBELUMNYA data ini cuma disimpan di
+    // localStorage (per-browser, tidak pernah dikirim ke backend), jadi
+    // "hilang" tiap kali dibuka dari browser/device lain atau localStorage-nya
+    // ke-clear. Sekarang backend sudah punya tabel riwayat_aktivitas +
+    // endpoint /api/riwayat, jadi data diambil dari sana (lihat
+    // fetchActivityLogs & logActivity di bawah).
+    const [activityLogs, setActivityLogs] = useState([]);
 
-    useEffect(() => {
+    const formatRiwayatTime = (dateString) => {
+        if (!dateString) return 'Baru saja';
+        const date = new Date(dateString.replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return 'Baru saja';
+        const now = new Date();
+        const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
+        const jam = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        if (diffDays === 0) return `Hari ini, ${jam}`;
+        if (diffDays === 1) return `Kemarin, ${jam}`;
+        return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}, ${jam}`;
+    };
+
+    const fetchActivityLogs = useCallback(async () => {
         try {
-            // Dibatasi 200 entri terbaru supaya localStorage tidak membengkak.
-            localStorage.setItem(RIWAYAT_STORAGE_KEY, JSON.stringify(activityLogs.slice(0, 200)));
+            const res = await getRiwayatApi({ per_page: 100 });
+            const rows = Array.isArray(res) ? res : (res.data || []);
+            setActivityLogs(
+                rows.map((r) => ({
+                    id: r.id,
+                    admin: r.nama_user || 'Sistem / Guest',
+                    action: r.deskripsi ? `${r.aksi} -- ${r.deskripsi}` : r.aksi,
+                    time: formatRiwayatTime(r.created_at),
+                }))
+            );
         } catch (err) {
-            console.warn('Gagal menyimpan riwayat aktivitas ke localStorage:', err);
+            console.warn('Gagal mengambil riwayat aktivitas dari backend:', err);
         }
-    }, [activityLogs]);
+    }, []);
+
+    // Dipanggil tiap kali ada aksi yang perlu dicatat (submit laporan, ubah
+    // status, dst). Update state lokal dulu supaya UI langsung terasa
+    // responsif, lalu kirim ke backend supaya benar-benar tersimpan
+    // permanen -- BUKAN cuma di localStorage seperti sebelumnya.
+    const logActivity = useCallback((aksi, deskripsi) => {
+        setActivityLogs((prev) => [
+            {
+                id: `local-${Date.now()}`,
+                admin: auth?.name || 'Sistem / Guest',
+                action: deskripsi ? `${aksi} -- ${deskripsi}` : aksi,
+                time: 'Baru saja',
+            },
+            ...prev,
+        ]);
+        createRiwayatApi({ aksi, deskripsi }).catch((err) => {
+            // Endpoint ini butuh login (auth:sanctum) -- untuk aksi yang bisa
+            // dilakukan tanpa login (mis. petani submit laporan sebagai
+            // guest tanpa token), pencatatan ke backend akan gagal di sini.
+            // Entry lokal di atas tetap tampil untuk sesi ini, tapi tidak
+            // akan tersimpan permanen.
+            console.warn('Gagal mencatat riwayat aktivitas ke backend:', err);
+        });
+    }, [auth]);
     const [timPetugasList, setTimPetugasList] = useState(() => {
         try {
             const raw = localStorage.getItem(TIM_PETUGAS_STORAGE_KEY);
@@ -530,6 +566,8 @@ export function AppDataProvider({ children }) {
                     // Fetch summary publik untuk guest/guest view
                     fetchSummary();
                 }
+                // GET /riwayat publik (tidak butuh login), jadi selalu dimuat
+                fetchActivityLogs();
             }
         }
 
@@ -538,7 +576,7 @@ export function AppDataProvider({ children }) {
         return () => {
             isMounted = false;
         };
-    }, [fetchReports, fetchSummary, fetchSektors, fetchKategoris, fetchTimPetugas]);
+    }, [fetchReports, fetchSummary, fetchSektors, fetchKategoris, fetchTimPetugas, fetchActivityLogs]);
 
 
     // ==========================================
@@ -690,15 +728,7 @@ export function AppDataProvider({ children }) {
             setReports((prev) => [createdReport, ...prev]);
 
             // Catat log aktivitas
-            setActivityLogs((prev) => [
-                {
-                    id: Date.now(),
-                    admin: auth?.name || 'Petugas Lapangan',
-                    action: `Mengirim laporan baru ${createdReport.jenisLabel} di ${createdReport.sektor}`,
-                    time: 'Baru saja',
-                },
-                ...prev,
-            ]);
+            logActivity(`Mengirim laporan baru ${createdReport.jenisLabel} di ${createdReport.sektor}`);
 
             fetchSummary();
             return createdReport;
@@ -706,7 +736,7 @@ export function AppDataProvider({ children }) {
             console.error('Gagal mengirim laporan ke backend:', err);
             throw err;
         }
-    }, [auth, fetchSummary]);
+    }, [logActivity, fetchSummary]);
 
     const updateReportStatus = useCallback(async (id, status, noteOrExtra) => {
         const backendStatus = normalizeStatusToBackend(status);
@@ -765,15 +795,7 @@ export function AppDataProvider({ children }) {
             const noteForLocalState = isObjectPayload ? noteOrExtra.catatan_tindak_lanjut : noteOrExtra;
             applyLocalState(frontendStatus, noteForLocalState);
 
-            setActivityLogs((prev) => [
-                {
-                    id: Date.now(),
-                    admin: auth?.name || 'Hendra Wijaya',
-                    action: `Mengubah status laporan #${reportId} menjadi ${frontendStatus}`,
-                    time: 'Baru saja',
-                },
-                ...prev,
-            ]);
+            logActivity(`Mengubah status laporan #${reportId} menjadi ${frontendStatus}`);
 
             fetchSummary();
         } catch (err) {
@@ -785,7 +807,7 @@ export function AppDataProvider({ children }) {
             const noteForLocalState = isObjectPayload ? noteOrExtra.catatan_tindak_lanjut : noteOrExtra;
             applyLocalState(frontendStatus, noteForLocalState);
         }
-    }, [auth, fetchSummary]);
+    }, [logActivity, fetchSummary]);
 
     // ==========================================
     // SEKTOR & KATEGORI ACTIONS
