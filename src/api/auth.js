@@ -1,19 +1,16 @@
-import apiClient, { getCsrfCookie } from './client';
+import apiClient from './client';
 
 export async function registerApi(data) {
-    await getCsrfCookie();
     const response = await apiClient.post('/register', data);
     return response.data;
 }
 
 export async function loginApi(credentials) {
-    await getCsrfCookie();
     const response = await apiClient.post('/login', credentials);
     return response.data;
 }
 
 export async function guestApi(payload) {
-    await getCsrfCookie();
     // payload opsional { name, email } -- dipakai saat guest session dibuat
     // dari alur Google Login (lihat loginWithGoogle di AppDataContext) supaya
     // akun tamu yang dibuat backend tidak selalu bernama generik

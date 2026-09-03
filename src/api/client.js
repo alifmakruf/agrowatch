@@ -4,48 +4,56 @@ const rootUrl = import.meta.env.VITE_API_URL || 'https://backend-perkebunan-tebu
 
 export const apiClient = axios.create({
     baseURL: `${rootUrl}/api`,
-    withCredentials: true,
-    // Beberapa versi axios (>=1.6) mendukung opsi ini untuk memaksa
-    // pengiriman XSRF header walau request-nya cross-origin. Aman
-    // dibiarkan menyala meski versi axios lama akan mengabaikannya.
-    withXSRFToken: true,
     headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
     },
 });
 
-// Fallback manual: baca cookie XSRF-TOKEN dari document.cookie dan pasang
-// sebagai header X-XSRF-TOKEN di setiap request. Ini WAJIB karena axios
-// hanya melakukan ini otomatis untuk request same-origin -- frontend
-// (localhost:5173) dan backend (localhost:8000) dianggap beda origin
-// (port berbeda), jadi mekanisme bawaan axios tidak jalan di sini.
-function readCookie(name) {
-    const match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]*)'));
-    return match ? decodeURIComponent(match[2]) : null;
+// Autentikasi berbasis token (Bearer), BUKAN lagi cookie/session Sanctum SPA.
+//
+// SEBELUMNYA project ini pakai cookie-based Sanctum SPA auth (CSRF cookie +
+// withCredentials + baca cookie XSRF-TOKEN manual). Itu cuma reliable kalau
+// FE & BE satu root domain (mis. app.domain.com & api.domain.com). Karena
+// FE (Vercel) & BE (Railway) di domain BEDA tanpa custom domain, cookie
+// cross-site semacam itu gampang diblokir browser (Safari ITP, dan makin
+// lama makin ketat juga di Chrome) -- efeknya login terlihat sukses tapi
+// request berikutnya balik dianggap guest lagi.
+//
+// Token di header Authorization tidak kena batasan cross-site cookie sama
+// sekali, jadi ini yang dipakai sekarang. Token disimpan di localStorage
+// supaya sesi tidak hilang saat halaman di-refresh.
+const AUTH_TOKEN_STORAGE_KEY = 'agrowatch_auth_token';
+
+let authToken = null;
+try {
+    authToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || null;
+} catch (err) {
+    authToken = null;
+}
+
+export function setAuthToken(token) {
+    authToken = token || null;
+    try {
+        if (token) {
+            localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+        } else {
+            localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+        }
+    } catch (err) {
+        console.warn('Gagal menyimpan auth token ke localStorage:', err);
+    }
+}
+
+export function getAuthToken() {
+    return authToken;
 }
 
 apiClient.interceptors.request.use((config) => {
-    const token = readCookie('XSRF-TOKEN');
-    if (token) {
-        config.headers['X-XSRF-TOKEN'] = token;
+    if (authToken) {
+        config.headers['Authorization'] = `Bearer ${authToken}`;
     }
     return config;
 });
-
-// Helper untuk inisialisasi Sanctum CSRF Cookie
-export async function getCsrfCookie() {
-    try {
-        await axios.get(`${rootUrl}/sanctum/csrf-cookie`, {
-            withCredentials: true,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-            },
-        });
-    } catch (err) {
-        console.warn('Gagal memuat csrf-cookie dari server:', err.message);
-    }
-}
 
 export default apiClient;

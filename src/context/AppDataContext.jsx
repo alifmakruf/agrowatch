@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { loginApi, guestApi, getUserApi, logoutApi } from '../api/auth';
+import { setAuthToken } from '../api/client';
 import {
     getLaporanApi,
     getLaporanSummaryApi,
@@ -484,7 +485,10 @@ export function AppDataProvider({ children }) {
             setAuthLoading(true);
             let user = null;
             try {
-                // Cek cookie sesi yang aktif
+                // Cek token yang tersimpan di localStorage (lihat api/client.js)
+                // -- kalau ada & masih valid, endpoint /user akan mengembalikan
+                // datanya; kalau tidak ada/sudah kedaluwarsa, request ini akan
+                // gagal (401) dan ditangkap di catch di bawah sebagai guest.
                 const userData = await getUserApi();
                 user = userData.user || userData;
                 if (user && isMounted) {
@@ -544,6 +548,11 @@ export function AppDataProvider({ children }) {
     const login = useCallback(async (email, password) => {
         try {
             const res = await loginApi({ email, password });
+            // Backend Sanctum sekarang mengembalikan token (bukan cuma cookie
+            // sesi) -- lihat catatan di api/client.js soal kenapa auth pindah
+            // ke Bearer token. Token WAJIB disimpan supaya request berikutnya
+            // (fetchReports, dst) ikut terautentikasi.
+            setAuthToken(res.token || res.access_token || null);
             const user = res.user || res;
             const frontendRole = roleToFrontend(user.peran_user);
             const userAuth = ensureScalarOnly({
@@ -567,6 +576,7 @@ export function AppDataProvider({ children }) {
     const loginGuest = useCallback(async () => {
         try {
             const res = await guestApi();
+            setAuthToken(res.token || res.access_token || null);
             const user = res.user || res;
             const userAuth = ensureScalarOnly({
                 id: user?.id,
@@ -608,6 +618,7 @@ export function AppDataProvider({ children }) {
                 name: googleProfile?.name,
                 email: googleProfile?.email,
             });
+            setAuthToken(res.token || res.access_token || null);
             const user = res.user || res;
             const userAuth = ensureScalarOnly({
                 id: user?.id,
@@ -641,6 +652,7 @@ export function AppDataProvider({ children }) {
         } catch (err) {
             console.warn('Logout API error:', err);
         } finally {
+            setAuthToken(null);
             setAuth({ role: null, name: null, email: null });
         }
     }, []);
