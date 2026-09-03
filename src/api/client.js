@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const rootUrl = import.meta.env.VITE_API_URL || 'https://backend-perkebunan-tebu-production.up.railway.app';
+const rawRootUrl = import.meta.env.VITE_API_URL || 'https://backend-perkebunan-tebu-production.up.railway.app';
+
+// Pengaman: kalau VITE_API_URL diisi tanpa skema (mis. cuma
+// "xxx.up.railway.app" tanpa "https://" di depan), browser/axios akan
+// memperlakukannya sebagai path RELATIF terhadap domain frontend saat ini
+// -- request akan salah nyasar ke "https://domain-fe-nya/xxx.up.railway.app/api/..."
+// alih-alih ke backend. Ini persis penyebab error 404 yang muncul kalau env
+// var di Vercel lupa/salah diisi tanpa "https://". Tambahkan otomatis
+// supaya kesalahan konfigurasi seperti ini tidak bikin seluruh API gagal.
+const rootUrl = /^https?:\/\//i.test(rawRootUrl) ? rawRootUrl : `https://${rawRootUrl}`;
 
 export const apiClient = axios.create({
     baseURL: `${rootUrl}/api`,
