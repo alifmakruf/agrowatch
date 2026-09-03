@@ -5,5 +5,59 @@
 5. pada form pengisian laporan pada kolom jenis kejadian ada opsi bisa ngetik sendiri kejadiannya,
 6. saya ingin semua page atau card yang menampung foto ketika fotonya diklik maka foto nya akan keluar dengan ukuran aslinya atau tidak terpotong seperti pada card, jadi bisa dilihat foto full nya
 7. pada setiap filter yang berhubungan dengan status terbuka atau open tandai dengan dot merah sebagai indikator kalo ada yang belum di proses
-8. pada page profile settings itu saya ingin berisi (email, foto, nama,), juga bisa crud user manajemen lainnya disitu, 
+8. [DIBATALKAN] pada page profile settings itu saya ingin berisi (email, foto, nama,), juga bisa crud user manajemen lainnya disitu, 
 9. adakah solusi untuk mengurangi troller atau spammer laporan??
+
+1. hapus tombol "hapus semua" di daftar laporan
+2. tambahkan statistik di user petani atau petugas pelapor pada dashboardnya seperti jumlah laporan yang dibuat, yang selesai , dan yang di proses, 
+3. tambahkan icon seperti api pada kategori kejadian, jadi nanti di form laporannya juga ada iconnya, dilaporannya juga ada iconnya, jadi pada form selection kejadiannya ini option saja, gada opsi milih sendiri
+4. manajemen sektor juga membawa koordinat, jadi sektor ini kan area
+   lahan, nah di lahannya harusnya menyimpan data koordinat lahannya sehingga nanti di form laporannya ketika milih sektor sudah langsung dapat koordinat, nah pada preview map di formnya ini pertahankan agar user tetap bisa tau visual radius maupun area
+5. sekarang mengenai detail laporan, kan ketika laporan dibuat maka ada detail seperti kejadian,desc,foto,map,dll nah ketika diupdate jadi diproses kan muncul tuh di detail laporan kalo diproses dan dengan data diprosesnya oleh siapa dan gimana, saya ingin kalau ditandai selesai juga gitu, ketika selesai ga hanya selesai tapi ada formnya juga buat nambahin apa aja yang dilakukan di lapangan, juga berapa lama, alat apa aja yang dipakai, foto opsional, juga ada tanggal dan waktu, jadi nanti ada 3 section di detail laporan, 1.laporan itu sendiri 2.data diproses 3.data selesai
+6. riwayat di manajemen harus ditambahkan ke database dan gaboleh sampai hilang datanya
+7. tambahkan opsi ketika mau upload gambar, yaitu dari penyimpanan atau camera, dan juga bisa lebih dari 1
+
+==================================================
+ANALISIS PENYESUAIAN BACKEND (Nomor 3, 4, 5, 6, 7):
+==================================================
+- Nomor 1: HANYA FRONTEND (Menghapus tombol Hapus Semua di Daftar Laporan).
+- Nomor 2: FRONTEND (Kalkulasi statistik dari data laporan milik user / API laporan).
+- Nomor 3: PERLU BACKEND (Tambahkan kolom `icon` di skema data Kategori Kejadian).
+- Nomor 4: PERLU BACKEND (Tambahkan kolom `latitude`, `longitude`, dan `radius` pada skema data Sektor).
+- Nomor 5: PERLU BACKEND (Tambahkan kolom/relasi data Penyelesaian Selesai pada Laporan: `tgl_selesai`, `durasi_penanganan`, `alat_digunakan`, `catatan_selesai`, `foto_selesai`).
+- Nomor 6: PERLU BACKEND (Buat tabel database & endpoint API `riwayat` / `logs` agar data audit log persisten dan tidak hilang).
+- Nomor 7: PERLU BACKEND (Dukung upload & penyimpan data array multi-foto `foto[]` / array URL foto pada Laporan & Penyelesaian Selesai).
+
+==================================================
+PROMPT UNTUK PENYESUAIAN BACKEND:
+==================================================
+Halo Developer Backend, mohon bantuannya untuk melakukan penyesuaian API dan Database pada project AgroWatch sesuai kebutuhan fitur terbaru berikut:
+
+1. Kategori Kejadian (Nomor 3):
+   - Tambahkan field/kolom `icon` (string/varchar) pada tabel/model `kategori_kejadian` untuk menyimpan nama icon (misal: 'flame', 'bug', 'cloud-rain', 'tree', dll).
+   - Update endpoint CRUD Kategori (`GET`, `POST`, `PUT /api/kategori`) agar mendukung input & output field `icon`.
+
+2. Manajemen Sektor / Lahan (Nomor 4):
+   - Tambahkan field `latitude` (float/double), `longitude` (float/double), dan `radius` (integer/float dalam meter, default misal 200) pada tabel/model `sektor`.
+   - Update endpoint CRUD Sektor (`GET`, `POST`, `PUT /api/sektor`) agar menyimpan dan mengembalikan koordinat & radius sektor.
+
+3. Penyelesaian Laporan / Status Selesai (Nomor 5):
+   - Tambahkan field penyelesaian masalah pada tabel/model `laporan` (atau tabel relasi `selesai_laporan`):
+     * `tgl_selesai` (datetime / timestamp)
+     * `durasi_penanganan` (string, contoh: "2 Jam 30 Menit")
+     * `alat_digunakan` (text / string)
+     * `catatan_selesai` / `tindakan_lapangan` (text)
+     * `foto_selesai` (json / array / string list URL foto opsional)
+   - Update endpoint patch/update status laporan `PUT /api/laporan/:id/selesai` atau `PUT /api/laporan/:id` agar dapat menerima payloads data penanganan selesai ini.
+
+4. Riwayat / Activity Logs Persisten (Nomor 6):
+   - Buat tabel database `riwayat_aktivitas` dengan struktur minimal: `id`, `user_id`, `nama_user`, `role`, `aksi` (string), `deskripsi` (text), `created_at` (timestamp).
+   - Sediakan endpoint GET `/api/riwayat` untuk mengambil seluruh log riwayat aktivitas secara persisten.
+   - Buat helper/middleware otomatis atau endpoint POST `/api/riwayat` agar setiap aktivitas penting (laporan dibuat, status diubah ke diproses/selesai, sektor ditambah) tersimpan permanen ke database dan tidak terhapus.
+
+5. Multi-Foto Upload Support (Nomor 7):
+   - Update middleware file upload (Multer/Storage driver) dan database field `foto` pada `laporan` & `selesai_laporan` agar mendukung penyimpan array file foto (`foto[]` / JSON array string URL photo).
+   - Pastikan response API mengembalikan array URL foto.
+
+Mohon sesuaikan Migration DB, Controller, dan API documentation. Terima Kasih!
+==================================================

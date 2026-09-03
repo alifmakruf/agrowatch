@@ -17,8 +17,28 @@ import {
     createKategoriApi,
     deleteKategoriApi
 } from '../api/kategori';
+import {
+    getTimPetugasApi,
+    createTimPetugasApi,
+    updateTimPetugasApi,
+    deleteTimPetugasApi
+} from '../api/timPetugas';
+
+export function formatWaNumber(phone) {
+    if (!phone) return '';
+    let cleaned = String(phone).trim().replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+62')) {
+        return '62' + cleaned.slice(3);
+    } else if (cleaned.startsWith('62')) {
+        return cleaned;
+    } else if (cleaned.startsWith('0')) {
+        return '62' + cleaned.slice(1);
+    }
+    return cleaned;
+}
 
 // Helper: Ensure object yang disimpan di state hanya contain scalar values
+
 // Prevent accidentally rendering object kompleks ke JSX
 function ensureScalarOnly(obj, keys) {
     if (!obj || typeof obj !== 'object') return obj;
@@ -33,6 +53,43 @@ function ensureScalarOnly(obj, keys) {
 }
 
 const SETTINGS_STORAGE_KEY = 'agrowatch_ui_settings';
+const TIM_PETUGAS_STORAGE_KEY = 'agrowatch_tim_petugas';
+const SEKTOR_STORAGE_KEY = 'agrowatch_sektor_list';
+const ACTIVITY_LOGS_STORAGE_KEY = 'agrowatch_activity_logs';
+
+const DEFAULT_TIM_PETUGAS = [
+    { id: 1, nama_tim: 'Tim Alpha (Hama & Penyakit)', nama_ketua: 'Ir. Ahmad Subagyo', nomor_wa: '081234567890', spesialisasi: 'Penanganan Hama & Penyakit' },
+    { id: 2, nama_tim: 'Tim Bravo (Irigasi & Infrastruktur)', nama_ketua: 'Budi Santoso', nomor_wa: '082345678901', spesialisasi: 'Irigasi & Saluran Air' },
+    { id: 3, nama_tim: 'Tim Charlie (Keamanan & Patroli)', nama_ketua: 'Suryanto', nomor_wa: '083456789012', spesialisasi: 'Patroli Kebun & Keamanan' },
+];
+
+const DEFAULT_SEKTORS = [
+    { id: 1, nama: 'Sektor A (Blok 1 - 4)', luas: 120, latitude: -7.9650, longitude: 112.6310, radius: 300, status: 'Aktif' },
+    { id: 2, nama: 'Sektor B (Blok 1 - 3)', luas: 95, latitude: -7.9710, longitude: 112.6370, radius: 250, status: 'Aktif' },
+    { id: 3, nama: 'Sektor C (Kawasan Pembibitan)', luas: 50, latitude: -7.9600, longitude: 112.6280, radius: 200, status: 'Aktif' },
+];
+
+const DEFAULT_ACTIVITY_LOGS = [
+    {
+        id: 1,
+        admin: 'Admin Sistem',
+        action: 'Sistem AgroWatch diinisialisasi dengan konfigurasi wilayah operasional & audit log aktif.',
+        time: 'Hari ini, 08:00 WIB',
+    },
+    {
+        id: 2,
+        admin: 'Ir. Ahmad Subagyo',
+        action: 'Menugaskan Tim Alpha untuk inspeksi pencegahan hama di Sektor A.',
+        time: 'Hari ini, 09:15 WIB',
+    },
+    {
+        id: 3,
+        admin: 'Budi Santoso',
+        action: 'Memperbarui koordinat perimeter irigasi pada Sektor B (Radius 250m).',
+        time: 'Kemarin, 14:30 WIB',
+    },
+];
+
 
 // Helper Mapping Status Backend <-> Frontend
 export function normalizeStatusToFrontend(backendStatus) {
@@ -86,11 +143,21 @@ export function formatReportItem(item) {
     const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const reportId = item.id_laporan || item.id || Math.floor(Math.random() * 10000);
 
+    // foto_bukti bisa datang dalam beberapa bentuk dari backend: string
+    // path/URL tunggal, array of string (multi-foto), atau kosong/null.
+    // SEBELUMNYA kode ini langsung memanggil `.startsWith()` pada
+    // item.foto_bukti tanpa cek tipe dulu -- kalau backend mengirim
+    // array atau object, ini crash dengan "startsWith is not a function".
     let imageUrl = null;
-    if (item.foto_bukti) {
+    if (typeof item.foto_bukti === 'string' && item.foto_bukti) {
         imageUrl = item.foto_bukti.startsWith('http')
             ? item.foto_bukti
             : `${backendUrl}/storage/${item.foto_bukti.replace(/^\//, '')}`;
+    } else if (Array.isArray(item.foto_bukti) && item.foto_bukti.length > 0 && typeof item.foto_bukti[0] === 'string') {
+        const first = item.foto_bukti[0];
+        imageUrl = first.startsWith('http')
+            ? first
+            : `${backendUrl}/storage/${first.replace(/^\//, '')}`;
     } else if (item.image) {
         imageUrl = item.image;
     }
@@ -111,6 +178,24 @@ export function formatReportItem(item) {
     const sektorName = item.wilayah || item.sektor || 'Sektor A';
     const deskripsiText = item.keterangan_tambahan || item.deskripsi || '';
     const tindakLanjutText = item.catatan_tindak_lanjut || item.tindakLanjut || 'Menunggu penanganan dari tim manajemen.';
+
+    // Tim & kendala sekarang punya kolom sendiri di backend (lihat
+    // migration add_tim_kendala_to_laporans_table) supaya bisa dibaca
+    // ulang untuk prefill form Tindak Lanjut. Untuk laporan LAMA yang
+    // sempat tersimpan sebelum kolom ini ada (format gabungan
+    // "Tim: X (Kendala: Y). instruksi..." di catatan_tindak_lanjut),
+    // tetap dicoba di-parse sebagai fallback supaya data lama tidak hilang.
+    let timValue = item.tim_penanggung_jawab || item.timPenanggungJawab || '';
+    let kendalaValue = item.kendala || '';
+    let catatanMurni = item.catatan_tindak_lanjut || '';
+    if (!timValue && catatanMurni) {
+        const match = catatanMurni.match(/^Tim:\s*([^(.]+?)(?:\s*\(Kendala:\s*([^)]+)\))?\.\s*(.*)$/s);
+        if (match) {
+            timValue = match[1]?.trim() || '';
+            kendalaValue = kendalaValue || match[2]?.trim() || '';
+            catatanMurni = match[3]?.trim() || '';
+        }
+    }
     const statusNormalized = normalizeStatusToFrontend(item.status_penanganan || item.status);
 
     // Extract pelapor name safely - convert to string, never include object!
@@ -137,6 +222,22 @@ export function formatReportItem(item) {
     // untuk routing URL & pemanggilan API, tidak berubah.
     const displayCode = item.kode_laporan || String(reportId);
 
+    // Multi-foto support
+    let photosList = [];
+    if (Array.isArray(item.photos)) {
+        photosList = item.photos;
+    } else if (Array.isArray(item.foto_list)) {
+        photosList = item.foto_list;
+    } else if (imageUrl) {
+        photosList = [imageUrl];
+    }
+
+    // Foto selesai bukti penanganan lapangan
+    let fotoSelesaiUrl = item.foto_selesai || item.fotoSelesai || null;
+    if (fotoSelesaiUrl && typeof fotoSelesaiUrl === 'string' && !fotoSelesaiUrl.startsWith('http') && !fotoSelesaiUrl.startsWith('data:')) {
+        fotoSelesaiUrl = `${backendUrl}/storage/${fotoSelesaiUrl.replace(/^\//, '')}`;
+    }
+
     return {
         id: displayCode,
         id_laporan: reportId,
@@ -154,12 +255,6 @@ export function formatReportItem(item) {
         lng: !isNaN(lng) ? lng : 112.6326,
         latitude: !isNaN(lat) ? lat : -7.9666,
         longitude: !isNaN(lng) ? lng : 112.6326,
-        // SEBELUMNYA hanya membaca `item.locationType`, `item.radiusUnit`, dst
-        // (camelCase) yang TIDAK PERNAH ada di respons backend Laravel --
-        // backend selalu memakai snake_case (`location_type`, `radius_unit`,
-        // dst). Karena itu, walau backend sudah menyimpan datanya, field ini
-        // selalu jatuh ke nilai default dan radius/area tidak pernah tampil
-        // di Peta Interaktif.
         locationType: item.location_type || item.locationType || 'titik',
         radius: item.radius ?? null,
         radiusUnit: item.radius_unit || item.radiusUnit || 'm',
@@ -169,14 +264,23 @@ export function formatReportItem(item) {
         deskripsi: deskripsiText,
         keterangan_tambahan: deskripsiText,
         image: imageUrl,
-        foto_bukti: item.foto_bukti,
+        foto_bukti: typeof item.foto_bukti === 'string' ? item.foto_bukti : imageUrl,
+        photos: photosList,
         status: statusNormalized,
         status_penanganan: normalizeStatusToBackend(statusNormalized),
         tindakLanjut: tindakLanjutText,
-        catatan_tindak_lanjut: tindakLanjutText,
+        catatan_tindak_lanjut: catatanMurni || tindakLanjutText,
+        timPenanggungJawab: timValue,
+        kendala: kendalaValue,
         pelapor: pelaporValue,  // ← Safe: only string, never object
         pelaporId: pelaporIdValue,
         urgensi: item.urgensi || (statusNormalized === 'Terbuka' ? 'Tinggi' : 'Menengah'),
+        // Data penyelesaian lapangan (Selesai)
+        tglSelesai: item.tgl_selesai || item.tglSelesai || item.waktu_selesai || null,
+        durasiPenanganan: item.durasi_penanganan || item.durasiPenanganan || null,
+        alatDigunakan: item.alat_digunakan || item.alatDigunakan || null,
+        catatanSelesai: item.catatan_selesai || item.tindakan_lapangan || item.catatanSelesai || null,
+        fotoSelesai: fotoSelesaiUrl,
     };
 }
 
@@ -194,7 +298,45 @@ export function AppDataProvider({ children }) {
     const [summary, setSummary] = useState(null);
     const [sektorList, setSektorList] = useState([]);
     const [kategoriKejadian, setKategoriKejadian] = useState([]);
-    const [activityLogs, setActivityLogs] = useState([]);
+    // Riwayat aktivitas dipersist ke localStorage supaya tidak hilang
+    // saat refresh/logout -- SEBELUMNYA activityLogs cuma disimpan di
+    // state React di memori, jadi hilang total tiap kali halaman
+    // dimuat ulang. Ini solusi sementara sampai backend menyediakan
+    // tabel riwayat_aktivitas + endpoint /api/riwayat; begitu itu ada,
+    // ganti sumbernya jadi fetch dari API (lihat fetchActivityLogs di
+    // bawah, yang sudah disiapkan untuk kasus itu).
+    const RIWAYAT_STORAGE_KEY = 'agrowatch_riwayat_aktivitas';
+    const [activityLogs, setActivityLogs] = useState(() => {
+        try {
+            const saved = localStorage.getItem(RIWAYAT_STORAGE_KEY);
+            return saved ? JSON.parse(saved) : [];
+        } catch (err) {
+            console.warn('Gagal membaca riwayat aktivitas dari localStorage:', err);
+            return [];
+        }
+    });
+
+    useEffect(() => {
+        try {
+            // Dibatasi 200 entri terbaru supaya localStorage tidak membengkak.
+            localStorage.setItem(RIWAYAT_STORAGE_KEY, JSON.stringify(activityLogs.slice(0, 200)));
+        } catch (err) {
+            console.warn('Gagal menyimpan riwayat aktivitas ke localStorage:', err);
+        }
+    }, [activityLogs]);
+    const [timPetugasList, setTimPetugasList] = useState(() => {
+        try {
+            const raw = localStorage.getItem(TIM_PETUGAS_STORAGE_KEY);
+            return raw ? JSON.parse(raw) : DEFAULT_TIM_PETUGAS;
+        } catch {
+            return DEFAULT_TIM_PETUGAS;
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem(TIM_PETUGAS_STORAGE_KEY, JSON.stringify(timPetugasList));
+    }, [timPetugasList]);
+
 
     // 3. Settings UI State (Lokal)
     const [settings, setSettings] = useState(() => {
@@ -270,21 +412,29 @@ export function AppDataProvider({ children }) {
                 nama: s.nama_sektor || s.nama || 'Sektor A',
                 luas: s.luas_ha || s.luas || 100,
                 status: s.status || 'Aktif',
+                // Koordinat pusat & radius (meter) sektor -- dipakai Form.jsx
+                // untuk auto-isi lokasi & menampilkan visual radius di map
+                // saat petani memilih sektor ini. Backend belum tentu sudah
+                // punya kolom ini, jadi field-nya bisa null/undefined dan
+                // itu tetap aman (Form.jsx sudah menangani kasus kosong).
+                latitude: s.latitude != null ? Number(s.latitude) : null,
+                longitude: s.longitude != null ? Number(s.longitude) : null,
+                radius: s.radius != null ? Number(s.radius) : null,
             }));
-            if (mapped.length > 0) {
-                setSektorList(mapped);
-            } else {
-                setSektorList([
-                    { id: 1, nama: 'Sektor A (Blok 1 - 4)', luas: 120, status: 'Aktif' },
-                    { id: 2, nama: 'Sektor B (Blok 1 - 3)', luas: 95, status: 'Aktif' },
-                ]);
-            }
+            // Selalu pakai data asli dari backend (termasuk kalau memang
+            // kosong). SEBELUMNYA di sini ada fallback ke daftar sektor
+            // hardcoded ber-id 1 & 2 setiap kali hasil dari backend kosong.
+            // Id palsu itu ditampilkan di UI seolah-olah data asli, lalu
+            // dipakai untuk memanggil updateSektorApi/deleteSektorApi --
+            // yang gagal dengan 404 karena id itu tidak benar-benar ada
+            // di database. Kalau memang kosong, tampilkan kosong saja.
+            setSektorList(mapped);
         } catch (err) {
-            console.warn('Gagal mengambil daftar sektor dari backend, menggunakan default lokal:', err);
-            setSektorList([
-                { id: 1, nama: 'Sektor A (Blok 1 - 4)', luas: 120, status: 'Aktif' },
-                { id: 2, nama: 'Sektor B (Blok 1 - 3)', luas: 95, status: 'Aktif' },
-            ]);
+            // Jangan timpa sektorList dengan data hardcoded yang bisa
+            // mismatch dengan id di database (penyebab 404 saat hapus/edit
+            // sektor). Biarkan state sebelumnya tetap ada supaya tidak ada
+            // id palsu yang beredar di UI.
+            console.warn('Gagal mengambil daftar sektor dari backend:', err);
         }
     }, []);
 
@@ -304,9 +454,29 @@ export function AppDataProvider({ children }) {
         }
     }, []);
 
+    const fetchTimPetugas = useCallback(async () => {
+        try {
+            const res = await getTimPetugasApi();
+            const rawData = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+            if (rawData.length > 0) {
+                const mapped = rawData.map((t) => ({
+                    id: t.id || t.id_tim,
+                    nama_tim: t.nama_tim || t.nama || 'Tim Petugas',
+                    nama_ketua: t.nama_ketua || t.ketua || '',
+                    nomor_wa: t.nomor_wa || t.no_wa || '',
+                    spesialisasi: t.spesialisasi || '',
+                }));
+                setTimPetugasList(mapped);
+            }
+        } catch (err) {
+            console.warn('Gagal mengambil tim petugas dari API, menggunakan data lokal:', err);
+        }
+    }, []);
+
     // ==========================================
     // CEK SESI USER PADA SAAT MOUNT (SANCTUM SPA)
     // ==========================================
+
     useEffect(() => {
         let isMounted = true;
 
@@ -351,6 +521,7 @@ export function AppDataProvider({ children }) {
                     fetchSummary();
                     fetchSektors();
                     fetchKategoris();
+                    fetchTimPetugas();
                 } else {
                     // Fetch summary publik untuk guest/guest view
                     fetchSummary();
@@ -363,7 +534,8 @@ export function AppDataProvider({ children }) {
         return () => {
             isMounted = false;
         };
-    }, [fetchReports, fetchSummary, fetchSektors, fetchKategoris]);
+    }, [fetchReports, fetchSummary, fetchSektors, fetchKategoris, fetchTimPetugas]);
+
 
     // ==========================================
     // AUTENTIKASI ACTIONS
@@ -524,25 +696,62 @@ export function AppDataProvider({ children }) {
         }
     }, [auth, fetchSummary]);
 
-    const updateReportStatus = useCallback(async (id, status, note) => {
+    const updateReportStatus = useCallback(async (id, status, noteOrExtra) => {
         const backendStatus = normalizeStatusToBackend(status);
         const reportId = String(id).replace('#', '').replace('RP-', '');
 
-        try {
-            await updateLaporanStatusApi(reportId, {
-                status_penanganan: backendStatus,
-                catatan_tindak_lanjut: note || undefined,
-            });
+        // `noteOrExtra` bisa berupa string biasa (dipakai DaftarLaporan.jsx
+        // & DetailLaporan.jsx yang cuma mengirim catatan singkat) ATAU
+        // objek { catatan_tindak_lanjut, tim_penanggung_jawab, kendala,
+        // durasi_penanganan, alat_digunakan, catatan_selesai, tgl_selesai,
+        // fotoSelesaiPreview } -- field kelompok kedua (durasi..dst) dipakai
+        // DetailLaporan.jsx saat mengisi Form Selesai. `fotoSelesaiPreview`
+        // adalah object URL lokal (bukan file asli) karena endpoint
+        // status saat ini masih JSON, bukan multipart -- jadi foto belum
+        // benar-benar terunggah ke server sampai backend menyediakan
+        // endpoint atau kolom yang menerima file untuk data penyelesaian.
+        const isObjectPayload = noteOrExtra && typeof noteOrExtra === 'object';
+        const payload = {
+            status_penanganan: backendStatus,
+            catatan_tindak_lanjut: isObjectPayload ? noteOrExtra.catatan_tindak_lanjut : (noteOrExtra || undefined),
+        };
+        if (isObjectPayload) {
+            payload.tim_penanggung_jawab = noteOrExtra.tim_penanggung_jawab;
+            payload.kendala = noteOrExtra.kendala;
+            payload.durasi_penanganan = noteOrExtra.durasi_penanganan;
+            payload.alat_digunakan = noteOrExtra.alat_digunakan;
+            payload.catatan_selesai = noteOrExtra.catatan_selesai;
+            payload.tgl_selesai = noteOrExtra.tgl_selesai;
+        }
 
-            const frontendStatus = normalizeStatusToFrontend(backendStatus);
-
+        const applyLocalState = (frontendStatus, noteForLocalState) => {
             setReports((prev) =>
                 prev.map((r) =>
                     String(r.id) === String(reportId) || String(r.rawId) === String(reportId)
-                        ? { ...r, status: frontendStatus, tindakLanjut: note || r.tindakLanjut }
+                        ? {
+                            ...r,
+                            status: frontendStatus,
+                            tindakLanjut: noteForLocalState || r.tindakLanjut,
+                            catatan_tindak_lanjut: noteForLocalState || r.catatan_tindak_lanjut,
+                            timPenanggungJawab: isObjectPayload ? (noteOrExtra.tim_penanggung_jawab || r.timPenanggungJawab) : r.timPenanggungJawab,
+                            kendala: isObjectPayload ? (noteOrExtra.kendala || r.kendala) : r.kendala,
+                            durasiPenanganan: isObjectPayload ? (noteOrExtra.durasi_penanganan || r.durasiPenanganan) : r.durasiPenanganan,
+                            alatDigunakan: isObjectPayload ? (noteOrExtra.alat_digunakan || r.alatDigunakan) : r.alatDigunakan,
+                            catatanSelesai: isObjectPayload ? (noteOrExtra.catatan_selesai || r.catatanSelesai) : r.catatanSelesai,
+                            tglSelesai: isObjectPayload ? (noteOrExtra.tgl_selesai || r.tglSelesai) : r.tglSelesai,
+                            fotoSelesai: isObjectPayload ? (noteOrExtra.fotoSelesaiPreview || r.fotoSelesai) : r.fotoSelesai,
+                        }
                         : r
                 )
             );
+        };
+
+        try {
+            await updateLaporanStatusApi(reportId, payload);
+
+            const frontendStatus = normalizeStatusToFrontend(backendStatus);
+            const noteForLocalState = isObjectPayload ? noteOrExtra.catatan_tindak_lanjut : noteOrExtra;
+            applyLocalState(frontendStatus, noteForLocalState);
 
             setActivityLogs((prev) => [
                 {
@@ -557,15 +766,12 @@ export function AppDataProvider({ children }) {
             fetchSummary();
         } catch (err) {
             console.error('Gagal update status laporan:', err);
-            // Optimistic update
+            // Optimistic update -- tetap simpan data yang sudah diisi
+            // user secara lokal walau request ke backend gagal, supaya
+            // tidak hilang dan bisa dicoba disinkronkan lagi nanti.
             const frontendStatus = normalizeStatusToFrontend(backendStatus);
-            setReports((prev) =>
-                prev.map((r) =>
-                    String(r.id) === String(reportId) || String(r.rawId) === String(reportId)
-                        ? { ...r, status: frontendStatus, tindakLanjut: note || r.tindakLanjut }
-                        : r
-                )
-            );
+            const noteForLocalState = isObjectPayload ? noteOrExtra.catatan_tindak_lanjut : noteOrExtra;
+            applyLocalState(frontendStatus, noteForLocalState);
         }
     }, [auth, fetchSummary]);
 
@@ -573,13 +779,35 @@ export function AppDataProvider({ children }) {
     // SEKTOR & KATEGORI ACTIONS
     // ==========================================
 
-    const addSektor = useCallback(async (nama, luas) => {
+    const addSektor = useCallback(async (nama, luas, koordinat) => {
+        // `koordinat` opsional: { latitude, longitude, radius }. Backend
+        // yang belum punya kolom ini akan tetap menerima request (field
+        // ekstra biasanya diabaikan), dan fallback lokal di bawah tetap
+        // menyimpannya supaya UI (preview radius di Form.jsx) langsung
+        // berfungsi meski backend belum diupdate.
+        const lat = koordinat?.latitude !== '' && koordinat?.latitude != null ? Number(koordinat.latitude) : null;
+        const lng = koordinat?.longitude !== '' && koordinat?.longitude != null ? Number(koordinat.longitude) : null;
+        const rad = koordinat?.radius !== '' && koordinat?.radius != null ? Number(koordinat.radius) : null;
+        // CATATAN: dulu ada fallback yang menambahkan sektor ke state lokal
+        // dengan id sementara (Date.now()) kalau request ke backend gagal.
+        // Itu bikin sektor "muncul" di UI padahal tidak pernah tersimpan di
+        // database -- begitu user coba edit/hapus sektor itu, id sementara
+        // itu tidak dikenali backend dan selalu gagal 404. Sekarang kalau
+        // gagal, cukup beri tahu user dan JANGAN ubah state lokal, supaya
+        // data yang ditampilkan selalu konsisten dengan database.
         try {
-            await createSektorApi({ nama_sektor: nama, luas_ha: Number(luas) || 0, status: 'Aktif' });
+            await createSektorApi({
+                nama_sektor: nama,
+                luas_ha: Number(luas) || 0,
+                status: 'Aktif',
+                latitude: lat,
+                longitude: lng,
+                radius: rad,
+            });
             fetchSektors();
         } catch (err) {
-            console.warn('Gagal addSektor API, update lokal:', err);
-            setSektorList((prev) => [...prev, { id: Date.now(), nama, luas: Number(luas) || 0, status: 'Aktif' }]);
+            console.warn('Gagal addSektor API:', err);
+            alert('Gagal menambahkan sektor ke server. Coba lagi.');
         }
     }, [fetchSektors]);
 
@@ -588,8 +816,8 @@ export function AppDataProvider({ children }) {
             await updateSektorApi(id, data);
             fetchSektors();
         } catch (err) {
-            console.warn('Gagal updateSektor API, update lokal:', err);
-            setSektorList((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)));
+            console.warn('Gagal updateSektor API:', err);
+            alert('Gagal mengubah sektor di server. Coba lagi.');
         }
     }, [fetchSektors]);
 
@@ -598,8 +826,8 @@ export function AppDataProvider({ children }) {
             await deleteSektorApi(id);
             fetchSektors();
         } catch (err) {
-            console.warn('Gagal deleteSektor API, update lokal:', err);
-            setSektorList((prev) => prev.filter((s) => s.id !== id));
+            console.warn('Gagal deleteSektor API:', err);
+            alert('Gagal menghapus sektor di server. Coba lagi.');
         }
     }, [fetchSektors]);
 
@@ -622,6 +850,44 @@ export function AppDataProvider({ children }) {
             setKategoriKejadian((prev) => prev.filter((k) => k !== kategoriOrId));
         }
     }, [fetchKategoris]);
+
+    const addTimPetugas = useCallback(async (data) => {
+
+        try {
+            await createTimPetugasApi(data);
+            fetchTimPetugas();
+        } catch (err) {
+            console.warn('Gagal addTimPetugas API, simpan lokal:', err);
+            const newItem = {
+                id: Date.now(),
+                nama_tim: data.nama_tim || data.namaTim,
+                nama_ketua: data.nama_ketua || data.namaKetua || '',
+                nomor_wa: data.nomor_wa || data.nomorWa || '',
+                spesialisasi: data.spesialisasi || '',
+            };
+            setTimPetugasList((prev) => [...prev, newItem]);
+        }
+    }, [fetchTimPetugas]);
+
+    const updateTimPetugas = useCallback(async (id, data) => {
+        try {
+            await updateTimPetugasApi(id, data);
+            fetchTimPetugas();
+        } catch (err) {
+            console.warn('Gagal updateTimPetugas API, update lokal:', err);
+            setTimPetugasList((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
+        }
+    }, [fetchTimPetugas]);
+
+    const removeTimPetugas = useCallback(async (id) => {
+        try {
+            await deleteTimPetugasApi(id);
+            fetchTimPetugas();
+        } catch (err) {
+            console.warn('Gagal deleteTimPetugas API, update lokal:', err);
+            setTimPetugasList((prev) => prev.filter((t) => t.id !== id));
+        }
+    }, [fetchTimPetugas]);
 
     const updateSettings = useCallback((patch) => {
         setSettings((prev) => ({ ...prev, ...patch }));
@@ -649,6 +915,11 @@ export function AppDataProvider({ children }) {
         fetchKategoris,
         addKategori,
         removeKategori,
+        timPetugasList,
+        fetchTimPetugas,
+        addTimPetugas,
+        updateTimPetugas,
+        removeTimPetugas,
         activityLogs,
         addReport,
         updateReportStatus,
@@ -657,6 +928,7 @@ export function AppDataProvider({ children }) {
         // Backward compatibility
         myReportIds: reports.map((r) => r.id),
     };
+
 
     return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

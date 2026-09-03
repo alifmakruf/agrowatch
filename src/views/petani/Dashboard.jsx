@@ -1,14 +1,34 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tractor, LogOut, Plus, History } from 'lucide-react';
+import { Tractor, LogOut, Plus, History, ClipboardList, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 
 export default function DashboardPetani() {
     const navigate = useNavigate();
-    const { logout, auth } = useAppData();
+    const { logout, auth, reports, fetchReports } = useAppData();
     const currentDate = new Date()
         .toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
         .toUpperCase();
+
+    // Statistik dihitung dari laporan milik akun petani yang sedang login
+    // saja -- sama seperti pola filter id_pelapor di History.jsx.
+    useEffect(() => {
+        if (auth?.id) {
+            fetchReports({ id_pelapor: auth.id });
+        }
+    }, [fetchReports, auth?.id]);
+
+    const myReports = useMemo(
+        () => reports.filter((r) => !auth?.id || r.pelaporId == auth.id),
+        [reports, auth?.id]
+    );
+
+    const stats = useMemo(() => {
+        const total = myReports.length;
+        const diproses = myReports.filter((r) => r.status === 'Diproses' || r.status === 'Sedang Diproses').length;
+        const selesai = myReports.filter((r) => r.status === 'Selesai' || r.status === 'Ditutup').length;
+        return { total, diproses, selesai };
+    }, [myReports]);
 
     const handleLogout = () => {
         logout();
@@ -52,6 +72,31 @@ export default function DashboardPetani() {
                         <p className="text-base text-gray-500 dark:text-gray-400 leading-relaxed max-w-2xl mx-auto md:mx-0">
                             Pilih aksi di bawah ini untuk memulai aktivitas harian Anda. Laporan akan terintegrasi langsung dengan dashboard manajemen untuk penanganan cepat.
                         </p>
+                    </section>
+
+                    {/* Statistik Laporan Milik Petani Ini */}
+                    <section className="grid grid-cols-3 gap-3 md:gap-4 mb-10">
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 md:p-5 flex flex-col items-center md:items-start shadow-sm">
+                            <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-xl mb-2">
+                                <ClipboardList size={18} className="text-gray-600 dark:text-gray-300" />
+                            </div>
+                            <span className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</span>
+                            <span className="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 font-medium text-center md:text-left">Total Laporan</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 md:p-5 flex flex-col items-center md:items-start shadow-sm">
+                            <div className="bg-amber-50 dark:bg-amber-950/30 p-2 rounded-xl mb-2">
+                                <Loader2 size={18} className="text-amber-600" />
+                            </div>
+                            <span className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.diproses}</span>
+                            <span className="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 font-medium text-center md:text-left">Diproses</span>
+                        </div>
+                        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 md:p-5 flex flex-col items-center md:items-start shadow-sm">
+                            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-xl mb-2">
+                                <CheckCircle2 size={18} className="text-emerald-600" />
+                            </div>
+                            <span className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.selesai}</span>
+                            <span className="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 font-medium text-center md:text-left">Selesai</span>
+                        </div>
                     </section>
 
                     {/* Pilihan Menu (Cards) - Responsif Grid */}

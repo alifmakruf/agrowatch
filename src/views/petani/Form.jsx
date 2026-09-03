@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, HelpCircle, MapPin, CircleDashed, Map, Crosshair, Camera, AlertCircle, Lightbulb, Square, AlertTriangle, Expand } from 'lucide-react';
+import { ArrowLeft, HelpCircle, MapPin, CircleDashed, Map, Crosshair, Camera, Images, AlertCircle, Lightbulb, Square, AlertTriangle, X } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import PhotoLightbox from '../../components/PhotoLightbox';
+import CategoryIcon from '../../components/CategoryIcon';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -23,10 +24,13 @@ export default function FormPetani() {
     const [sektor, setSektor] = useState('');
     const [lat, setLat] = useState('');
     const [lng, setLng] = useState('');
+    const [sektorAutoFilled, setSektorAutoFilled] = useState(false);
     const [deskripsi, setDeskripsi] = useState('');
-    const [fotoFile, setFotoFile] = useState(null);
-    const [fotoName, setFotoName] = useState('');
-    const [fotoPreview, setFotoPreview] = useState(null);
+    // Multi-foto: array of { file, name, preview }. SEBELUMNYA cuma
+    // menyimpan 1 file (fotoFile/fotoName/fotoPreview tunggal) dengan
+    // teks eksplisit "Hanya 1 foto didukung saat ini" -- sekarang
+    // mendukung banyak foto sekaligus, baik dari kamera maupun galeri.
+    const [fotoList, setFotoList] = useState([]);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [locating, setLocating] = useState(false);
     const [errors, setErrors] = useState({});
@@ -67,28 +71,22 @@ export default function FormPetani() {
     };
 
     const handleFotoChange = (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) {
-            setFotoFile(file);
-            setFotoName(file.name);
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        if (files.length === 0) return;
+        files.forEach((file) => {
             const reader = new FileReader();
             reader.onload = (uploadEvent) => {
-                setFotoPreview(uploadEvent.target.result);
+                setFotoList((prev) => [...prev, { file, name: file.name, preview: uploadEvent.target.result }]);
             };
             reader.readAsDataURL(file);
-        } else {
-            setFotoFile(null);
-            setFotoName('');
-            setFotoPreview(null);
-        }
+        });
+        // Reset value supaya input file yang sama bisa dipilih ulang
+        // (mis. ambil foto kamera dua kali berturut-turut).
+        e.target.value = '';
     };
 
-    const handleRemoveFoto = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setFotoFile(null);
-        setFotoName('');
-        setFotoPreview(null);
+    const handleRemoveFoto = (index) => {
+        setFotoList((prev) => prev.filter((_, i) => i !== index));
     };
 
     const validate = () => {
@@ -97,7 +95,7 @@ export default function FormPetani() {
         if (!tanggal) next.tanggal = 'Isi tanggal & waktu kejadian.';
         if (!sektor) next.sektor = 'Pilih lahan/sektor terkena dampak.';
         if (!lat || !lng) next.lokasi = 'Isi koordinat lokasi atau gunakan lokasi saat ini.';
-        if (!fotoFile && !fotoPreview) next.foto = 'Foto bukti kejadian wajib diunggah (1 foto).';
+        if (fotoList.length === 0) next.foto = 'Minimal 1 foto bukti kejadian wajib diunggah.';
         if (!deskripsi.trim()) next.deskripsi = 'Berikan deskripsi kejadian.';
 
         // Validasi Radius
@@ -131,9 +129,16 @@ export default function FormPetani() {
             formData.append('keterangan_tambahan', deskripsi);
             formData.append('waktu_lapor', new Date(tanggal).toISOString());
 
-            if (fotoFile) {
-                // Backend wajib 1 foto bukti file upload
-                formData.append('foto_bukti', fotoFile);
+            if (fotoList.length > 0) {
+                // Kirim sebagai array foto[] supaya backend bisa menerima
+                // banyak file sekaligus (perlu update handler storage di
+                // backend untuk menerima & menyimpan array ini).
+                fotoList.forEach((f) => {
+                    formData.append('foto[]', f.file);
+                });
+                // Tetap sertakan foto_bukti (foto pertama) untuk kompatibilitas
+                // mundur dengan backend lama yang cuma mengharapkan 1 file.
+                formData.append('foto_bukti', fotoList[0].file);
             }
 
             // Kirim juga data geometri (radius/area) yang dipilih user --
@@ -324,6 +329,27 @@ export default function FormPetani() {
         ? sektorList.map(s => s.nama)
         : ['Sektor A (Blok 1 - 4)', 'Sektor B (Blok 1 - 3)', 'Blok A', 'Blok B'];
 
+    // Saat sektor dipilih dan datanya punya koordinat pusat + radius
+    // (diisi lewat Pengaturan.jsx oleh manajemen), otomatis isi
+    // koordinat & tampilkan visual radius di map -- petani tidak perlu
+    // menandai titik lokasi secara manual lagi.
+    const handleSektorChange = (namaSektor) => {
+        setSektor(namaSektor);
+        const found = sektorList?.find((s) => s.nama === namaSektor);
+        if (found && found.latitude != null && found.longitude != null) {
+            setLat(String(found.latitude));
+            setLng(String(found.longitude));
+            if (found.radius != null) {
+                setLocationType('radius');
+                setRadiusUnit('m');
+                setRadius(String(found.radius));
+            }
+            setSektorAutoFilled(true);
+        } else {
+            setSektorAutoFilled(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-800 flex flex-col font-sans text-gray-800 dark:text-gray-200">
 
@@ -358,19 +384,21 @@ export default function FormPetani() {
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Jenis Kejadian</label>
                                 <div className="relative">
-                                    <input
-                                        type="text"
-                                        list="jenis-kejadian-list"
+                                    {jenis && (
+                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <CategoryIcon name={jenis} size={16} />
+                                        </span>
+                                    )}
+                                    <select
                                         value={jenis}
                                         onChange={(e) => setJenis(e.target.value)}
-                                        placeholder="Ketik atau pilih dari list..."
-                                        className="w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-[#1a472a] outline-none bg-white dark:bg-gray-900"
-                                    />
-                                    <datalist id="jenis-kejadian-list">
+                                        className={`w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-[#1a472a] outline-none bg-white dark:bg-gray-900 ${jenis ? 'pl-8' : ''}`}
+                                    >
+                                        <option value="">Pilih jenis kejadian</option>
                                         {categories.map((kat, idx) => (
-                                            <option key={idx} value={kat} />
+                                            <option key={idx} value={kat}>{kat}</option>
                                         ))}
-                                    </datalist>
+                                    </select>
                                 </div>
                                 {fieldError('jenis')}
                             </div>
@@ -389,7 +417,7 @@ export default function FormPetani() {
                             <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Lahan / Sektor Terkena Dampak</label>
                             <select
                                 value={sektor}
-                                onChange={(e) => setSektor(e.target.value)}
+                                onChange={(e) => handleSektorChange(e.target.value)}
                                 className="w-full border border-gray-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-[#1a472a] outline-none bg-white dark:bg-gray-900"
                             >
                                 <option value="">Pilih sektor / wilayah</option>
@@ -398,6 +426,9 @@ export default function FormPetani() {
                                 ))}
                             </select>
                             {fieldError('sektor')}
+                            {sektorAutoFilled && (
+                                <p className="text-[11px] text-emerald-700 mt-1">Koordinat & radius area sektor ini terisi otomatis di peta lokasi.</p>
+                            )}
                         </div>
                     </section>
 
@@ -642,55 +673,50 @@ export default function FormPetani() {
 
                         <div>
                             <div className="flex items-center justify-between mb-1">
-                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400">Foto Bukti Lapangan (Wajib 1 Foto)</label>
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Hanya 1 foto didukung saat ini</span>
+                                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400">Foto Bukti Lapangan (Wajib Min. 1 Foto)</label>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{fotoList.length} foto dipilih</span>
                             </div>
 
-                            {fotoPreview ? (
-                                <div className="relative rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-gray-900 group">
-                                    <img
-                                        src={fotoPreview}
-                                        alt="Preview Bukti"
-                                        onClick={() => setLightboxSrc(fotoPreview)}
-                                        className="w-full h-52 object-cover cursor-zoom-in"
-                                    />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setLightboxSrc(fotoPreview)}
-                                            className="bg-white/95 hover:bg-white text-gray-800 dark:text-gray-200 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-colors shadow flex items-center gap-1.5"
-                                        >
-                                            <Expand size={14} />
-                                            <span>Lihat Full</span>
-                                        </button>
-                                        <label className="bg-white/95 hover:bg-white text-gray-800 dark:text-gray-200 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-colors shadow flex items-center gap-1.5">
-                                            <Camera size={14} />
-                                            <span>Ganti Foto</span>
-                                            <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleFotoChange} />
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveFoto}
-                                            className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow cursor-pointer"
-                                        >
-                                            Hapus
-                                        </button>
-                                    </div>
-                                    <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-md truncate max-w-[85%] flex items-center gap-1.5">
-                                        <Camera size={12} />
-                                        <span className="truncate">{fotoName}</span>
-                                    </div>
+                            {/* Grid thumbnail foto yang sudah dipilih */}
+                            {fotoList.length > 0 && (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                                    {fotoList.map((f, idx) => (
+                                        <div key={idx} className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-900 group aspect-square">
+                                            <img
+                                                src={f.preview}
+                                                alt={`Bukti ${idx + 1}`}
+                                                onClick={() => setLightboxSrc(f.preview)}
+                                                className="w-full h-full object-cover cursor-zoom-in"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveFoto(idx)}
+                                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full shadow cursor-pointer opacity-90 group-hover:opacity-100"
+                                            >
+                                                <X size={11} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ) : (
-                                <label className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 hover:border-emerald-600 transition-colors">
-                                    <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" className="hidden" onChange={handleFotoChange} />
-                                    <Camera size={32} className="text-gray-400 dark:text-gray-500 mb-3" />
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                        Ketuk untuk mengunggah foto bukti kejadian
-                                    </p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Format JPEG, PNG, JPG, atau WEBP (Maks 5MB)</p>
-                                </label>
                             )}
+
+                            {/* Pilihan sumber foto: Kamera (capture=environment membuka kamera
+                                langsung di HP) atau Penyimpanan/Galeri (bisa pilih banyak sekaligus) */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 hover:border-emerald-600 transition-colors">
+                                    <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" capture="environment" className="hidden" onChange={handleFotoChange} />
+                                    <Camera size={24} className="text-gray-400 dark:text-gray-500 mb-2" />
+                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Ambil Foto</p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Kamera</p>
+                                </label>
+                                <label className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 hover:border-emerald-600 transition-colors">
+                                    <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple className="hidden" onChange={handleFotoChange} />
+                                    <Images size={24} className="text-gray-400 dark:text-gray-500 mb-2" />
+                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Pilih dari Galeri</p>
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Bisa lebih dari 1</p>
+                                </label>
+                            </div>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">Format JPEG, PNG, JPG, atau WEBP (Maks 5MB per foto)</p>
                             {fieldError('foto')}
                         </div>
                     </section>

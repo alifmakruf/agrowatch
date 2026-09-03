@@ -121,6 +121,7 @@ export default function Sidebar({ children }) {
                                 <span>Pengaturan Aplikasi</span>
                             </div>
                             <div className="pl-11 pr-4 py-2 space-y-2 text-xs text-gray-400">
+                                <p onClick={() => handleNavigate('/manajemen/pengaturan', { state: { tab: 'tim' } })} className="hover:text-white cursor-pointer transition-colors">Manajemen Tim</p>
                                 <p onClick={() => handleNavigate('/manajemen/pengaturan', { state: { tab: 'sektor' } })} className="hover:text-white cursor-pointer transition-colors">Manajemen Sektor</p>
                                 <p onClick={() => handleNavigate('/manajemen/pengaturan', { state: { tab: 'kategori' } })} className="hover:text-white cursor-pointer transition-colors">Kategori Kejadian</p>
                                 <p onClick={() => handleNavigate('/manajemen/pengaturan', { state: { tab: 'tampilan' } })} className="hover:text-white cursor-pointer transition-colors">Tampilan & Warna</p>

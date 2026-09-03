@@ -387,7 +387,7 @@ export default function RingkasanManajemen() {
                     </div>
 
                     {/* Jenis Insiden (Bar Persentase) */}
-                    <div className="lift-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6">
+                    {/* <div className="lift-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs p-6">
                         <h2 className="font-bold text-gray-900 dark:text-gray-100 text-base mb-6">Jenis Insiden</h2>
 
                         <div className="space-y-5">
@@ -412,7 +412,7 @@ export default function RingkasanManajemen() {
                             })}
                         </div>
 
-                    </div>
+                    </div> */}
 
                 </div>
 

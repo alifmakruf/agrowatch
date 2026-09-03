@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, HelpCircle, Calendar, Bug, MapPin, ExternalLink, Crosshair } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Calendar, MapPin, ExternalLink, Crosshair } from 'lucide-react';
 import { useAppData, formatReportItem } from '../../context/AppDataContext';
 import { getLaporanDetailApi } from '../../api/laporan';
 import PhotoLightbox from '../../components/PhotoLightbox';
+import CategoryIcon from '../../components/CategoryIcon';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -202,12 +203,7 @@ export default function DetailHistory() {
                     <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">JENIS INSIDEN</span>
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-2 bg-red-50 text-red-600 rounded-xl">
-                                    <Bug size={18} />
-                                </div>
-                                <span className="font-bold text-gray-900 dark:text-gray-100 text-sm">{report.jenisLabel}</span>
-                            </div>
+                            <CategoryIcon name={report.jenisLabel} size={18} withBackground showLabel labelClassName="font-bold text-gray-900 dark:text-gray-100 text-sm" />
                         </div>
                         <div>
                             <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">PELAPOR</span>
