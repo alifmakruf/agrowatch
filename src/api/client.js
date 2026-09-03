@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const rootUrl = import.meta.env.VITE_API_URL || 'backend-perkebunan-tebu-production.up.railway.app';
+const rootUrl = import.meta.env.VITE_API_URL || 'https://backend-perkebunan-tebu-production.up.railway.app';
 
 export const apiClient = axios.create({
     baseURL: `${rootUrl}/api`,
