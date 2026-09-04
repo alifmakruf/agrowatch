@@ -105,6 +105,7 @@ export default function PetaManajemen() {
         // marker diklik atau popup detail ditutup, seluruh peta di-destroy
         // (map.remove()) lalu dibuat ULANG dari titik default -- itulah
         // sumber bug "kepental ke area default" dan "popup kebuka sendiri".
+        let cancelled = false;
         const map = L.map('map-container', { zoomControl: false }).setView([-7.9666, 112.6326], 9);
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -121,6 +122,14 @@ export default function PetaManajemen() {
         (async () => {
             try {
                 const res = await getLaporanMapApi({});
+                // BUG SEBELUMNYA: kalau user pindah halaman sebelum fetch di
+                // atas selesai, komponen sudah unmount dan map.remove() sudah
+                // dipanggil di cleanup -- tapi kode di bawah ini tetap
+                // lanjut jalan dan memanggil method (fitBounds/getBounds) di
+                // peta yang sudah dihancurkan, menyebabkan crash
+                // "Cannot read properties of undefined (reading '_leaflet_pos')".
+                // Guard `cancelled` di sini mencegah itu.
+                if (cancelled) return;
                 const rawData = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
                 const formatted = rawData
                     .map(formatReportItem)
@@ -131,19 +140,26 @@ export default function PetaManajemen() {
                     map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
                 }
             } catch (err) {
-                console.warn('Gagal menentukan area fokus awal peta:', err);
+                if (!cancelled) {
+                    console.warn('Gagal menentukan area fokus awal peta:', err);
+                }
             } finally {
                 // Setelah posisi awal ditentukan, lanjut ke mode fetch
                 // berbasis bounding box viewport seperti biasa.
-                fetchBBoxReportsRef.current(map);
+                if (!cancelled) {
+                    fetchBBoxReportsRef.current(map);
+                }
             }
         })();
 
         // Event listener moveend / zoomend dengan debounce 300ms
         const handleMapMove = () => {
+            if (cancelled) return;
             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
             debounceTimerRef.current = setTimeout(() => {
-                fetchBBoxReportsRef.current(map);
+                if (!cancelled) {
+                    fetchBBoxReportsRef.current(map);
+                }
             }, 300);
         };
 
@@ -151,6 +167,7 @@ export default function PetaManajemen() {
         map.on('zoomend', handleMapMove);
 
         return () => {
+            cancelled = true;
             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
             map.off('moveend', handleMapMove);
             map.off('zoomend', handleMapMove);
