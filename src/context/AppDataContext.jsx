@@ -722,6 +722,19 @@ export function AppDataProvider({ children }) {
             }
         }
 
+        // id_pelapor WAJIB disertakan supaya backend tahu laporan ini
+        // dikirim oleh siapa -- dipakai FE untuk memfilter "Riwayat
+        // Laporan" milik petani sendiri (lihat History.jsx/Dashboard.jsx
+        // yang memanggil fetchReports({ id_pelapor: auth.id })).
+        // SEBELUMNYA field ini tidak pernah dikirim sama sekali, jadi tiap
+        // laporan tersimpan dengan id_pelapor kosong di backend -- laporan
+        // tetap muncul di Daftar Laporan Manajemen (tidak difilter per
+        // user), tapi tidak pernah muncul di Riwayat Laporan petani yang
+        // login, karena tidak ada yang cocok dengan id_pelapor mereka.
+        if (auth?.id && !formData.has('id_pelapor')) {
+            formData.append('id_pelapor', auth.id);
+        }
+
         try {
             const res = await createLaporanApi(formData);
             const createdReport = formatReportItem(res.laporan || res.data || res);
@@ -736,7 +749,7 @@ export function AppDataProvider({ children }) {
             console.error('Gagal mengirim laporan ke backend:', err);
             throw err;
         }
-    }, [logActivity, fetchSummary]);
+    }, [auth, logActivity, fetchSummary]);
 
     const updateReportStatus = useCallback(async (id, status, noteOrExtra) => {
         const backendStatus = normalizeStatusToBackend(status);

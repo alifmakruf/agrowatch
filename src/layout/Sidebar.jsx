@@ -132,13 +132,13 @@ export default function Sidebar({ children }) {
 
                 {/* Footer Sidebar (Profile & Sign Out) */}
                 <div className="p-4 border-t border-white/10 space-y-1 bg-black/10">
-                    {/* <button
+                    <button
                         onClick={() => handleNavigate('/manajemen/pengaturan')}
                         className="lift-hover w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/5 transition-colors"
                     >
                         <User size={16} />
                         <span>Profile Settings</span>
-                    </button> */}
+                    </button>
                     <button
                         onClick={handleLogout}
                         className="lift-hover w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"

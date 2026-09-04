@@ -109,8 +109,8 @@ export default function DetailTindakLanjut() {
         if (!mapInstanceRef.current) {
             const map = L.map(mapRef.current, { zoomControl: false }).setView([lat, lng], zoom);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
                 maxZoom: 19,
             }).addTo(map);
 
