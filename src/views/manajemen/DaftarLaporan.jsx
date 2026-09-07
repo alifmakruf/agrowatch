@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from 're
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../layout/Sidebar';
-import { MoreVertical, ChevronLeft, ChevronRight, X, Search, Flame, Bug, Droplets, RefreshCw, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
+import { MoreVertical, ChevronLeft, ChevronRight, X, Search, Flame, Bug, Droplets, RefreshCw, FileSpreadsheet, FileText, Loader2, Filter, MapPin } from 'lucide-react';
 import { useAppData, formatReportItem } from '../../context/AppDataContext';
 import { getLaporanApi } from '../../api/laporan';
 import CategoryIcon from '../../components/CategoryIcon';
@@ -84,11 +84,26 @@ export default function DaftarLaporan() {
     const [menuAnchorRect, setMenuAnchorRect] = useState(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { reports, fetchReports, fetchSummary, summary, reportsLoading, updateReportStatus } = useAppData();
+    const { reports, fetchReports, fetchSummary, summary, reportsLoading, kategoriKejadian } = useAppData();
 
     const [exportingFormat, setExportingFormat] = useState(null); // 'excel' | 'pdf' | null
 
     const closeMenu = () => { setOpenMenuId(null); setMenuAnchorRect(null); };
+
+    // Kategori kejadian yang sinkron dengan manajemen kategori di Pengaturan
+    const availableCategories = useMemo(() => {
+        const base = Array.isArray(kategoriKejadian) && kategoriKejadian.length > 0
+            ? [...kategoriKejadian]
+            : ['Serangan Hama', 'Kerusakan Irigasi', 'Kebakaran', 'Penyakit Tanaman', 'Sensor Offline', 'Pencurian Hasil Panen'];
+
+        reports.forEach((r) => {
+            const cat = r.jenisLabel || r.jenis;
+            if (cat && !base.includes(cat)) {
+                base.push(cat);
+            }
+        });
+        return base;
+    }, [kategoriKejadian, reports]);
 
     const handleToggleMenu = (e, id) => {
         if (openMenuId === id) {
@@ -130,7 +145,11 @@ export default function DaftarLaporan() {
         else if (activeTab === 'Selesai') result = result.filter((d) => d.status === 'Selesai' || d.status === 'Ditutup');
 
         if (selectedCategory) {
-            result = result.filter((d) => d.jenis.toLowerCase().includes(selectedCategory.toLowerCase()));
+            result = result.filter((d) => {
+                const target = selectedCategory.toLowerCase();
+                const actual = (d.jenis || '').toLowerCase();
+                return actual === target || actual.includes(target) || target.includes(actual);
+            });
         }
 
         if (query) {
@@ -311,20 +330,49 @@ export default function DaftarLaporan() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full px-4 py-2 w-full max-w-sm shadow-xs">
-                    <Search size={16} className="text-gray-400 dark:text-gray-500" />
-                    <input
-                        type="text"
-                        placeholder="Cari laporan, ID, atau lokasi..."
-                        value={searchParams.get('q') || ''}
-                        onChange={handleSearchChange}
-                        className="w-full text-xs outline-none bg-transparent"
-                    />
-                    {query && (
-                        <button onClick={clearSearch} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:text-gray-300 cursor-pointer">
-                            <X size={14} />
-                        </button>
-                    )}
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full px-4 py-2 w-full max-w-sm shadow-xs">
+                        <Search size={16} className="text-gray-400 dark:text-gray-500" />
+                        <input
+                            type="text"
+                            placeholder="Cari laporan, ID, atau lokasi..."
+                            value={searchParams.get('q') || ''}
+                            onChange={handleSearchChange}
+                            className="w-full text-xs outline-none bg-transparent"
+                        />
+                        {query && (
+                            <button onClick={clearSearch} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:text-gray-300 cursor-pointer">
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Filter Dropdown Jenis Kejadian (Tersinkron dengan Manajemen Kategori Kejadian) */}
+                    <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full px-3.5 py-2 shadow-xs">
+                        <Filter size={14} className="text-[#14361e] dark:text-emerald-400" />
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Jenis:</span>
+                        <select
+                            value={selectedCategory || ''}
+                            onChange={(e) => { setSelectedCategory(e.target.value || null); setPage(1); }}
+                            className="text-xs font-bold text-gray-800 dark:text-gray-200 bg-transparent outline-none cursor-pointer pr-1"
+                        >
+                            <option value="" className="dark:bg-gray-900">Semua Jenis Kejadian</option>
+                            {availableCategories.map((kat, idx) => (
+                                <option key={idx} value={kat} className="dark:bg-gray-900">
+                                    {kat}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedCategory && (
+                            <button
+                                onClick={() => { setSelectedCategory(null); setPage(1); }}
+                                className="text-gray-400 hover:text-red-500 p-0.5 rounded-full transition-colors cursor-pointer"
+                                title="Reset filter jenis kejadian"
+                            >
+                                <X size={13} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
@@ -351,26 +399,21 @@ export default function DaftarLaporan() {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <div className="h-5 w-[1px] bg-gray-200 mx-1 hidden sm:block"></div>
-                        {[
-                            { name: 'Kebakaran', icon: Flame },
-                            { name: 'Hama', icon: Bug },
-                            { name: 'Irigasi', icon: Droplets },
-                        ].map((cat) => {
-                            const IconComponent = cat.icon;
-                            const isSelected = selectedCategory === cat.name;
+                    {/* Quick filter pills dinamis dari availableCategories */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
+                        {availableCategories.slice(0, 5).map((catName) => {
+                            const isSelected = selectedCategory === catName;
                             return (
                                 <button
-                                    key={cat.name}
-                                    onClick={() => { setSelectedCategory(isSelected ? null : cat.name); setPage(1); }}
-                                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${isSelected
+                                    key={catName}
+                                    onClick={() => { setSelectedCategory(isSelected ? null : catName); setPage(1); }}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${isSelected
                                         ? 'bg-green-100 text-green-900 border border-green-300 font-bold'
                                         : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50'
                                         }`}
                                 >
-                                    <IconComponent size={13} />
-                                    <span>{cat.name}</span>
+                                    <CategoryIcon name={catName} size={13} />
+                                    <span>{catName}</span>
                                 </button>
                             );
                         })}
@@ -435,27 +478,20 @@ export default function DaftarLaporan() {
                                                     <ActionMenuPortal anchorRect={menuAnchorRect} onClose={closeMenu}>
                                                         <button
                                                             onClick={() => { navigate(`/manajemen/laporan/${item.rawId}`); closeMenu(); }}
-                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-700 dark:text-gray-300 font-medium border-b border-gray-100 dark:border-gray-800 cursor-pointer"
+                                                            className="w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium border-b border-gray-100 dark:border-gray-800 cursor-pointer flex items-center gap-2 transition-colors"
                                                         >
-                                                            Detail Laporan
+                                                            <FileText size={14} className="text-gray-400" />
+                                                            <span>Detail Laporan</span>
                                                         </button>
                                                         <button
-                                                            onClick={() => { navigate('/manajemen/map'); closeMenu(); }}
-                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-gray-700 dark:text-gray-300 cursor-pointer"
+                                                            onClick={() => {
+                                                                closeMenu();
+                                                                navigate(`/manajemen/map?id=${item.rawId}`);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 font-semibold cursor-pointer flex items-center gap-2 transition-colors"
                                                         >
-                                                            Lihat di Peta
-                                                        </button>
-                                                        <button
-                                                            onClick={async () => { await updateReportStatus(item.rawId, 'Diproses'); closeMenu(); }}
-                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-amber-700 cursor-pointer"
-                                                        >
-                                                            Tandai Diproses
-                                                        </button>
-                                                        <button
-                                                            onClick={() => { closeMenu(); navigate(`/manajemen/laporan/${item.rawId}`); }}
-                                                            className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 text-emerald-700 cursor-pointer"
-                                                        >
-                                                            Tandai Selesai
+                                                            <MapPin size={14} className="text-emerald-600 dark:text-emerald-400" />
+                                                            <span>Lihat di Peta</span>
                                                         </button>
                                                     </ActionMenuPortal>
                                                 )}

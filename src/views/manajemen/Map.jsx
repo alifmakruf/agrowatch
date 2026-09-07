@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import Sidebar from '../../layout/Sidebar';
 import { Filter, X, ChevronRight, ChevronUp, ChevronDown, AlertTriangle, Camera, MapPin, Crosshair, ExternalLink } from 'lucide-react';
 import PhotoLightbox from '../../components/PhotoLightbox';
 import DatePicker from 'react-datepicker';
-import { getLaporanMapApi } from '../../api/laporan';
+import { getLaporanMapApi, getLaporanDetailApi } from '../../api/laporan';
 import { formatReportItem, useAppData, normalizeStatusToBackend } from '../../context/AppDataContext';
 
 // Import Leaflet
@@ -29,8 +29,12 @@ function statusGroup(status) {
 }
 
 export default function PetaManajemen() {
-    const { kategoriKejadian } = useAppData();
+    const { kategoriKejadian, reports } = useAppData();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const location = useLocation();
+    const targetId = searchParams.get('id') || searchParams.get('focus') || location.state?.targetReportId;
+
     const [mapReports, setMapReports] = useState([]);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -146,7 +150,7 @@ export default function PetaManajemen() {
                     .map(formatReportItem)
                     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number');
 
-                if (formatted.length > 0) {
+                if (!targetId && formatted.length > 0) {
                     const bounds = L.latLngBounds(formatted.map((r) => [r.lat, r.lng]));
                     map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
                 }
@@ -199,6 +203,67 @@ export default function PetaManajemen() {
             fetchBBoxReports(mapRef.current);
         }
     }, [kategoriFilter, fetchBBoxReports]);
+
+    // Fokus langsung ke laporan tertentu jika URL memiliki parameter `?id=...` (misal dari tombol "Lihat di Peta")
+    useEffect(() => {
+        if (!targetId) return;
+        const cleanTargetId = String(targetId).replace('#', '').replace('RP-', '');
+
+        let isMounted = true;
+        const focusOnReport = (targetReport) => {
+            if (!targetReport || typeof targetReport.lat !== 'number' || typeof targetReport.lng !== 'number') return;
+
+            // 1. Pastikan grup status laporan ini aktif di filter
+            const grp = statusGroup(targetReport.status);
+            setStatusChecks((prev) => ({ ...prev, [grp]: true }));
+
+            // 2. Reset filter kategori agar tidak menyembunyikan laporan ini
+            setKategoriFilter('Semua Kategori');
+
+            // 3. Pastikan laporan ada di mapReports
+            setMapReports((prev) => {
+                const exists = prev.some((r) => String(r.id) === String(targetReport.id) || String(r.rawId) === String(targetReport.rawId));
+                return exists ? prev : [targetReport, ...prev];
+            });
+
+            // 4. Buka popup kartu detail laporan di kanan atas peta
+            setSelectedReport(targetReport);
+
+            // 5. Terbangkan peta langsung ke titik koordinat dengan zoom detail
+            if (mapRef.current) {
+                mapRef.current.flyTo([targetReport.lat, targetReport.lng], 16, { duration: 1.2 });
+            }
+        };
+
+        // Cari dulu di data lokal
+        const local = mapReports.find((r) => String(r.id) === cleanTargetId || String(r.rawId) === cleanTargetId)
+            || reports?.find((r) => String(r.id) === cleanTargetId || String(r.rawId) === cleanTargetId);
+
+        if (local) {
+            focusOnReport(local);
+            return;
+        }
+
+        // Jika belum ada di lokal, fetch detail dari API backend
+        (async () => {
+            try {
+                const res = await getLaporanDetailApi(cleanTargetId);
+                const item = res?.laporan || res?.data || res;
+                if (item && isMounted) {
+                    const formatted = formatReportItem(item);
+                    if (formatted) {
+                        focusOnReport(formatted);
+                    }
+                }
+            } catch (err) {
+                console.warn('Gagal memuat target laporan pada peta:', err);
+            }
+        })();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [targetId, reports]);
 
     // Render ulang marker dan visualisasi area/radius setiap kali data/filter berubah
     useEffect(() => {
@@ -265,32 +330,37 @@ export default function PetaManajemen() {
             }
 
             // MARKER PIN PUSAT
+            const isTarget = selectedReport && (String(item.id) === String(selectedReport.id) || String(item.rawId) === String(selectedReport.rawId));
             const customIcon = L.divIcon({
                 className: 'custom-pin',
                 html: `
                     <div style="
                         background-color: ${warna};
-                        width: 18px;
-                        height: 18px;
+                        width: ${isTarget ? '22px' : '18px'};
+                        height: ${isTarget ? '22px' : '18px'};
                         border-radius: 50%;
                         border: 3px solid white;
-                        box-shadow: 0 0 6px ${warna};
+                        box-shadow: 0 0 ${isTarget ? '12px' : '6px'} ${warna};
                         cursor: pointer;
                         display: flex;
                         align-items: center;
                         justify-content: center;
+                        transition: all 0.3s ease;
                     "></div>
                 `,
-                iconSize: [18, 18],
-                iconAnchor: [9, 9],
+                iconSize: [isTarget ? 22 : 18, isTarget ? 22 : 18],
+                iconAnchor: [isTarget ? 11 : 9, isTarget ? 11 : 9],
             });
 
             const marker = L.marker([item.lat, item.lng], { icon: customIcon }).addTo(map);
             marker.bindTooltip(`<b>${item.jenisLabel}</b><br/>${item.sektor}`, { direction: 'top' });
             marker.on('click', () => setSelectedReport(item));
+            if (isTarget) {
+                marker.openTooltip();
+            }
             markersRef.current.push(marker);
         });
-    }, [filteredReports]);
+    }, [filteredReports, selectedReport]);
 
     const toggleStatus = (key) => setStatusChecks((s) => ({ ...s, [key]: !s[key] }));
 
