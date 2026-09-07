@@ -221,6 +221,19 @@ export default function DetailTindakLanjut() {
         }
         setSubmittingSelesai(true);
         try {
+            let finalFoto = fotoSelesaiPreview;
+            if (fotoSelesaiFile) {
+                try {
+                    finalFoto = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = (err) => reject(err);
+                        reader.readAsDataURL(fotoSelesaiFile);
+                    });
+                } catch (e) {
+                    console.warn('Gagal membaca file foto:', e);
+                }
+            }
             await updateReportStatus(currentReport.rawId || id, 'Selesai', {
                 catatan_tindak_lanjut: instructions,
                 tim_penanggung_jawab: selectedTeam,
@@ -229,7 +242,8 @@ export default function DetailTindakLanjut() {
                 durasi_penanganan: durasiPenanganan.trim(),
                 alat_digunakan: alatDigunakan.trim(),
                 tgl_selesai: tglSelesai,
-                fotoSelesaiPreview: fotoSelesaiPreview,
+                fotoSelesai: finalFoto,
+                fotoSelesaiPreview: finalFoto,
             });
             setShowSelesaiModal(false);
             alert(`Laporan #${currentReport.id} berhasil ditandai selesai!`);

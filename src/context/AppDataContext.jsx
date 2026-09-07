@@ -777,9 +777,14 @@ export function AppDataProvider({ children }) {
             payload.alat_digunakan = noteOrExtra.alat_digunakan;
             payload.catatan_selesai = noteOrExtra.catatan_selesai;
             payload.tgl_selesai = noteOrExtra.tgl_selesai;
+            const fotoVal = noteOrExtra.fotoSelesai || noteOrExtra.fotoSelesaiPreview || noteOrExtra.foto_selesai;
+            if (fotoVal) {
+                payload.foto_selesai = fotoVal;
+            }
         }
 
         const applyLocalState = (frontendStatus, noteForLocalState) => {
+            const fotoVal = isObjectPayload ? (noteOrExtra.fotoSelesai || noteOrExtra.fotoSelesaiPreview || noteOrExtra.foto_selesai) : null;
             setReports((prev) =>
                 prev.map((r) =>
                     String(r.id) === String(reportId) || String(r.rawId) === String(reportId)
@@ -794,7 +799,7 @@ export function AppDataProvider({ children }) {
                             alatDigunakan: isObjectPayload ? (noteOrExtra.alat_digunakan || r.alatDigunakan) : r.alatDigunakan,
                             catatanSelesai: isObjectPayload ? (noteOrExtra.catatan_selesai || r.catatanSelesai) : r.catatanSelesai,
                             tglSelesai: isObjectPayload ? (noteOrExtra.tgl_selesai || r.tglSelesai) : r.tglSelesai,
-                            fotoSelesai: isObjectPayload ? (noteOrExtra.fotoSelesaiPreview || r.fotoSelesai) : r.fotoSelesai,
+                            fotoSelesai: fotoVal || r.fotoSelesai,
                         }
                         : r
                 )
