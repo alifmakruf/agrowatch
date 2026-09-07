@@ -114,6 +114,16 @@ export default function DetailTindakLanjut() {
                 maxZoom: 19,
             }).addTo(map);
 
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Esri',
+                maxZoom: 19,
+            }).addTo(map);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Esri',
+                maxZoom: 19,
+            }).addTo(map);
+
             const warna = currentReport.status === 'Selesai' ? '#15803d' : currentReport.status === 'Diproses' ? '#d97706' : '#dc2626';
 
             const customIcon = L.divIcon({
@@ -143,7 +153,16 @@ export default function DetailTindakLanjut() {
 
     const handleOpenWhatsApp = () => {
         const teamName = matchedTeamObj?.nama_ketua ? `${matchedTeamObj.nama_tim} (${matchedTeamObj.nama_ketua})` : selectedTeam || 'Tim Petugas';
-        const message = `Halo *${teamName}*,\n\nBerikut penugasan instruksi tindak lanjut insiden dari AgroWatch:\n\n📍 *Detail Laporan*: #${currentReport.id}\n📌 *Jenis Kejadian*: ${currentReport.jenisLabel || currentReport.jenis || '-'}\n🗺️ *Lokasi / Sektor*: ${currentReport.sektor || currentReport.lokasi || '-'}\n📝 *Deskripsi Kejadian*: ${currentReport.deskripsi || '-'}\n${selectedConstraint ? `⚠️ *Kendala*: ${selectedConstraint}\n` : ''}\n💬 *Instruksi Tindakan*:\n${instructions || 'Segera lakukan pengecekan dan tindakan di lokasi.'}\n\nMohon untuk segera ditindaklanjuti. Terima kasih.`;
+        const lat = currentReport.lat;
+        const lng = currentReport.lng;
+        const mapUrl = (lat && lng)
+            ? `https://maps.google.com/?q=${lat},${lng}`
+            : currentReport.koordinat
+            ? `https://maps.google.com/?q=${encodeURIComponent(currentReport.koordinat)}`
+            : '';
+        const mapSection = mapUrl ? `\n🌐 *Link Map*: ${mapUrl}` : '';
+
+        const message = `Halo *${teamName}*,\n\nBerikut penugasan instruksi tindak lanjut insiden dari AgroWatch:\n\n📍 *Detail Laporan*: #${currentReport.id}\n📌 *Jenis Kejadian*: ${currentReport.jenisLabel || currentReport.jenis || '-'}\n🗺️ *Lokasi / Sektor*: ${currentReport.sektor || currentReport.lokasi || '-'}${mapSection}\n📝 *Deskripsi Kejadian*: ${currentReport.deskripsi || '-'}\n${selectedConstraint ? `⚠️ *Kendala*: ${selectedConstraint}\n` : ''}\n💬 *Instruksi Tindakan*:\n${instructions || 'Segera lakukan pengecekan dan tindakan di lokasi.'}\n\nMohon untuk segera ditindaklanjuti. Terima kasih.`;
 
         const targetWa = waFormattedNumber || (matchedTeamObj?.nomor_wa ? formatWaNumber(matchedTeamObj.nomor_wa) : '');
         if (targetWa) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../layout/Sidebar';
-import { Filter, X, ChevronRight, ChevronUp, ChevronDown, AlertTriangle, Camera, MapPin, Crosshair } from 'lucide-react';
+import { Filter, X, ChevronRight, ChevronUp, ChevronDown, AlertTriangle, Camera, MapPin, Crosshair, ExternalLink } from 'lucide-react';
 import PhotoLightbox from '../../components/PhotoLightbox';
 import DatePicker from 'react-datepicker';
 import { getLaporanMapApi } from '../../api/laporan';
@@ -110,6 +110,17 @@ export default function PetaManajemen() {
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Overlay Label Jalan, Kecamatan, Kota, & Tempat
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Esri',
+            maxZoom: 19,
+        }).addTo(map);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Esri',
             maxZoom: 19,
         }).addTo(map);
 
@@ -451,6 +462,15 @@ export default function PetaManajemen() {
                                 >
                                     <span className="flex items-center gap-1.5"><Crosshair size={13} /> Fokus ke Titik Lokasi</span>
                                 </button>
+                                <a
+                                    href={`https://maps.google.com/?q=${selectedReport.lat},${selectedReport.lng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full bg-white dark:bg-gray-900 hover:bg-emerald-50 text-emerald-700 border border-emerald-600/40 font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                                >
+                                    <ExternalLink size={14} />
+                                    <span>Buka di Google Maps</span>
+                                </a>
                                 <button
                                     onClick={() => navigate(`/manajemen/laporan/${selectedReport.rawId ?? selectedReport.id}`)}
                                     className="w-full bg-[#14361e] hover:bg-[#1e4d2b] text-white font-medium text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"

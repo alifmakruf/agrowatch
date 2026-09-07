@@ -191,6 +191,16 @@ export default function FormPetani() {
             maxZoom: 19,
         }).addTo(map);
 
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Esri',
+            maxZoom: 19,
+        }).addTo(map);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Esri',
+            maxZoom: 19,
+        }).addTo(map);
+
         // Klik pada peta untuk memilih koordinat langsung
         map.on('click', (e) => {
             setLat(e.latlng.lat.toFixed(6));

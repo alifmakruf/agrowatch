@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../layout/Sidebar';
-import { ArrowLeft, MoreVertical, AlertTriangle, Calendar, MapPin, CheckCircle, UserPlus, Flag, FileText, Image as ImageIcon, ClipboardCheck, X, Wrench, Timer, Loader2 } from 'lucide-react';
+import { ArrowLeft, MoreVertical, AlertTriangle, Calendar, MapPin, CheckCircle, UserPlus, Flag, FileText, Image as ImageIcon, ClipboardCheck, X, Wrench, Timer, Loader2, ExternalLink } from 'lucide-react';
 import { useAppData, formatReportItem } from '../../context/AppDataContext';
 import { getLaporanDetailApi } from '../../api/laporan';
 import PhotoLightbox from '../../components/PhotoLightbox';
@@ -186,6 +186,23 @@ export default function DetailLaporan() {
                                         <MapPin size={14} className="text-gray-400 dark:text-gray-500" />
                                         <span>{currentReport.sektor || currentReport.lokasi}</span>
                                     </div>
+                                    {((currentReport.lat && currentReport.lng) || currentReport.koordinat || currentReport.sektor || currentReport.lokasi) && (
+                                        <a
+                                            href={
+                                                currentReport.lat && currentReport.lng
+                                                    ? `https://maps.google.com/?q=${currentReport.lat},${currentReport.lng}`
+                                                    : currentReport.koordinat
+                                                    ? `https://maps.google.com/?q=${encodeURIComponent(currentReport.koordinat)}`
+                                                    : `https://maps.google.com/?q=${encodeURIComponent(currentReport.sektor || currentReport.lokasi)}`
+                                            }
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:underline transition-colors"
+                                        >
+                                            <ExternalLink size={13} />
+                                            <span>Lihat di Google Maps</span>
+                                        </a>
+                                    )}
                                 </div>
                             </div>
 
@@ -347,6 +364,22 @@ export default function DetailLaporan() {
                                     <UserPlus size={16} />
                                     <span>{isSelesai ? 'Penugasan Terkunci' : hasTindakLanjut ? 'Edit Penugasan' : 'Tugaskan Tim'}</span>
                                 </button>
+
+                                <a
+                                    href={
+                                        currentReport.lat && currentReport.lng
+                                            ? `https://maps.google.com/?q=${currentReport.lat},${currentReport.lng}`
+                                            : currentReport.koordinat
+                                            ? `https://maps.google.com/?q=${encodeURIComponent(currentReport.koordinat)}`
+                                            : `https://maps.google.com/?q=${encodeURIComponent(currentReport.sektor || currentReport.lokasi || 'Indonesia')}`
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="lift-hover w-full bg-white dark:bg-gray-900 border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    <ExternalLink size={16} />
+                                    <span>Lihat di Google Maps</span>
+                                </a>
                             </div>
 
                             <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
